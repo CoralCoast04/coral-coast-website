@@ -167,12 +167,12 @@ create policy "product_images_admin_write"
 -- =============================================================================
 insert into public.products (slug, name, category, description, price, sale_price, fabric, color, image_url, featured) values
   ('chacabana-clasica-lino', 'Chacabana Clásica', 'Chacabanas', 'Chacabana de lino puro con alforzas verticales y botones de coco. El clásico dominicano, cortado a tu medida.', 6500, null, 'Lino', 'Marfil', 'https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?auto=format&fit=crop&w=1200&q=80', true),
-  ('chacabana-manga-corta', 'Chacabana Manga Corta', 'Chacabanas', 'Versión fresca en lino-algodón para el día. Caída ligera, hombros precisos, comodidad de clima cálido.', 5200, null, 'Lino-algodón', 'Blanco', 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?auto=format&fit=crop&w=1200&q=80', false),
+  ('chacabana-manga-corta', 'Chacabana Manga Corta', 'Chacabanas', 'Versión fresca y ligera para el día. Caída suave y comodidad de clima cálido.', 5200, null, 'Lino texturizado', 'Blanco', 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?auto=format&fit=crop&w=1200&q=80', false),
   ('chacabana-bordada-salvia', 'Chacabana Bordada', 'Chacabanas', 'Bordado sobrio a tono, tejido en lino salvia. Elegancia serena para la ocasión especial.', 7800, 6900, 'Lino', 'Salvia', 'https://images.unsplash.com/photo-1621072156002-e2fccdc0b176?auto=format&fit=crop&w=1200&q=80', true),
-  ('bermuda-lino-arena', 'Bermuda de Lino', 'Bermudas', 'Bermuda sastre de lino en tono arena. Pretina limpia y largo a la rodilla — del estudio a la costa.', 3900, null, 'Lino', 'Arena', 'https://images.unsplash.com/photo-1591195853828-11db59a44f6b?auto=format&fit=crop&w=1200&q=80', true),
-  ('bermuda-lino-algodon-navy', 'Bermuda Lino-Algodón', 'Bermudas', 'Estructura sutil y color navy profundo. La bermuda que sube el nivel de un look de verano.', 4200, null, 'Lino-algodón', 'Navy', 'https://images.unsplash.com/photo-1517445312882-bc9910d016b7?auto=format&fit=crop&w=1200&q=80', false),
-  ('traje-lino-navy', 'Traje de Lino', 'Trajes', 'Traje de dos piezas en lino navy, entretela ligera y corte natural. Sastrería tropical hecha a mano.', 18500, null, 'Lino', 'Navy', 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=1200&q=80', true),
-  ('traje-lino-algodon-arena', 'Traje Lino-Algodón', 'Trajes', 'Tono arena y textura viva para bodas y eventos de día. Ligereza y caída impecables bajo el sol.', 16900, 14900, 'Lino-algodón', 'Arena', 'https://images.unsplash.com/photo-1594938291221-94f18cbb5660?auto=format&fit=crop&w=1200&q=80', false),
+  ('bermuda-lino-arena', 'Bermuda de Lino', 'Bermudas', 'Bermuda de lino en tono arena. Pretina limpia y largo a la rodilla — del estudio a la costa.', 3900, null, 'Lino', 'Arena', 'https://images.unsplash.com/photo-1591195853828-11db59a44f6b?auto=format&fit=crop&w=1200&q=80', true),
+  ('bermuda-lino-algodon-navy', 'Bermuda Estructurada', 'Bermudas', 'Estructura sutil y color navy profundo. La bermuda que sube el nivel de un look de verano.', 4200, null, 'Lino estructurado', 'Navy', 'https://images.unsplash.com/photo-1517445312882-bc9910d016b7?auto=format&fit=crop&w=1200&q=80', false),
+  ('traje-lino-navy', 'Traje de Lino', 'Trajes', 'Traje de dos piezas en lino navy, entretela ligera y caída natural. Confección de autor para el trópico.', 18500, null, 'Lino', 'Navy', 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=1200&q=80', true),
+  ('traje-lino-algodon-arena', 'Traje de Lino Arena', 'Trajes', 'Tono arena y textura viva para bodas y eventos de día. Ligereza y caída impecables bajo el sol.', 16900, 14900, 'Lino texturizado', 'Arena', 'https://images.unsplash.com/photo-1594938291221-94f18cbb5660?auto=format&fit=crop&w=1200&q=80', false),
   ('pantalon-lino-blanco', 'Pantalón de Lino', 'Pantalones', 'Pantalón de lino de talle clásico con pinzas. Fresco, versátil, hecho a tu silueta.', 4500, null, 'Lino', 'Blanco', 'https://images.unsplash.com/photo-1473966968600-fa801b869a1a?auto=format&fit=crop&w=1200&q=80', false)
 on conflict (slug) do nothing;
 
@@ -181,3 +181,81 @@ insert into public.coupons (code, discount_type, discount_value, active, min_sub
   ('CORAL10', 'percent', 10, true, 0),
   ('BIENVENIDO', 'fixed', 1000, true, 5000)
 on conflict (code) do nothing;
+
+-- =============================================================================
+-- v2 · Tallas, tracking, suscriptores y contenido editable
+-- (idempotente — puedes re-ejecutar todo este archivo sin problema)
+-- =============================================================================
+
+-- Tallas y "a la medida" por producto
+alter table public.products add column if not exists sizes text[] not null default '{}';
+alter table public.products add column if not exists made_to_measure boolean not null default true;
+
+-- Tracking y correo del cliente en órdenes
+alter table public.orders add column if not exists tracking_code text unique;
+alter table public.orders add column if not exists customer_email text;
+
+-- SUSCRIPTORES (novedades y promos)
+create table if not exists public.subscribers (
+  id         uuid primary key default gen_random_uuid(),
+  email      text unique not null,
+  source     text,
+  created_at timestamptz not null default now()
+);
+alter table public.subscribers enable row level security;
+
+drop policy if exists "subscribers_public_insert" on public.subscribers;
+create policy "subscribers_public_insert"
+  on public.subscribers for insert to anon, authenticated with check (true);
+
+drop policy if exists "subscribers_admin_read" on public.subscribers;
+create policy "subscribers_admin_read"
+  on public.subscribers for select to authenticated using (true);
+
+-- CONTENIDO EDITABLE (textos de la web, dirección del estudio, etc.)
+create table if not exists public.site_content (
+  key        text primary key,
+  value      text,
+  updated_at timestamptz not null default now()
+);
+alter table public.site_content enable row level security;
+
+drop policy if exists "site_content_public_read" on public.site_content;
+create policy "site_content_public_read"
+  on public.site_content for select to anon, authenticated using (true);
+
+drop policy if exists "site_content_admin_write" on public.site_content;
+create policy "site_content_admin_write"
+  on public.site_content for all to authenticated using (true) with check (true);
+
+-- Claves de contenido con valores por defecto
+insert into public.site_content (key, value) values
+  ('hero_title', 'El Caribe, hecho a tu medida.'),
+  ('hero_subtitle', 'Chacabanas, trajes, bermudas y pantalones en lino y otros tejidos nobles. Piezas de colección o diseñadas a tu medida.'),
+  ('about_story', 'Coral Coast es una casa de diseño dominicana dedicada a la ropa a la medida. Creamos chacabanas, trajes, bermudas y pantalones en lino y otros tejidos nobles, con el cuidado del buen diseño y la frescura del Caribe.'),
+  ('studio_address', 'Santo Domingo, República Dominicana'),
+  ('studio_hours', 'Lunes a sábado · por cita'),
+  ('studio_maps_url', '')
+on conflict (key) do nothing;
+
+-- RPC para consultar el estado de un pedido por código (tracking anónimo seguro)
+create or replace function public.get_order_status(p_code text)
+returns table (
+  tracking_code text,
+  status text,
+  created_at timestamptz,
+  total numeric,
+  items jsonb,
+  customer_name text
+)
+language sql
+security definer
+set search_path = public
+as $$
+  select tracking_code, status, created_at, total, items, customer_name
+  from public.orders
+  where upper(tracking_code) = upper(trim(p_code))
+  limit 1;
+$$;
+
+grant execute on function public.get_order_status(text) to anon, authenticated;

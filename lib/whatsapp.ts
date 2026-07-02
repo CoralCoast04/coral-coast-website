@@ -20,7 +20,12 @@ export const WA_MESSAGES = {
     `Hola Coral Coast 🌾 Me interesa la pieza "${nombre}". ¿Me cuentan más?`,
 };
 
-type OrderLine = { name: string; qty: number; unit_price: number };
+type OrderLine = {
+  name: string;
+  qty: number;
+  unit_price: number;
+  size?: string;
+};
 
 function rd(n: number): string {
   if (n <= 0) return "A consultar";
@@ -36,12 +41,14 @@ export function buildOrderMessage(opts: {
   couponCode?: string | null;
   name?: string | null;
   phone?: string | null;
+  trackingCode?: string | null;
 }): string {
   const lines: string[] = [];
   lines.push("Hola Coral Coast 🌾 Quiero hacer este pedido:");
   lines.push("");
   opts.items.forEach((i) => {
-    lines.push(`• ${i.qty} × ${i.name} — ${rd(i.unit_price * i.qty)}`);
+    const size = i.size ? ` (${i.size})` : "";
+    lines.push(`• ${i.qty} × ${i.name}${size} — ${rd(i.unit_price * i.qty)}`);
   });
   lines.push("");
   lines.push(`Subtotal: ${rd(opts.subtotal)}`);
@@ -53,12 +60,16 @@ export function buildOrderMessage(opts: {
     );
   }
   lines.push(`Total: ${rd(opts.total)}`);
+  if (opts.trackingCode) {
+    lines.push("");
+    lines.push(`N.º de pedido: ${opts.trackingCode}`);
+  }
   if (opts.name || opts.phone) {
     lines.push("");
     if (opts.name) lines.push(`Nombre: ${opts.name}`);
     if (opts.phone) lines.push(`Teléfono: ${opts.phone}`);
   }
   lines.push("");
-  lines.push("Entiendo que las piezas son a la medida. ¿Cómo continuamos?");
+  lines.push("¿Cómo continuamos?");
   return lines.join("\n");
 }

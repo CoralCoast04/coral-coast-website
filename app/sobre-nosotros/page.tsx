@@ -2,14 +2,16 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { Reveal } from "@/components/Reveal";
+import { getContent } from "@/lib/content";
 
 export const metadata: Metadata = {
   title: "Sobre nosotros",
   description:
-    "La historia de Coral Coast: lino de lujo nacido en la costa dominicana. Menos, pero mejor.",
+    "La historia de Coral Coast: casa de diseño dominicana. Menos, pero mejor.",
 };
 
-export default function SobreNosotrosPage() {
+export default async function SobreNosotrosPage() {
+  const content = await getContent();
   return (
     <div className="pt-28 md:pt-36">
       {/* Encabezado */}
@@ -17,13 +19,10 @@ export default function SobreNosotrosPage() {
         <Reveal className="max-w-3xl">
           <p className="eyebrow text-salvia mb-4">Nuestra historia</p>
           <h1 className="text-4xl md:text-6xl text-navy leading-[1.1]">
-            Nacidos junto al mar, hechos con calma.
+            {content.about_h1}
           </h1>
           <p className="mt-6 text-lg md:text-xl text-navy/65 font-light leading-relaxed">
-            Coral Coast es un estudio de diseño dominicano dedicado a la ropa a la
-            medida. Confeccionamos chacabanas, trajes, bermudas y pantalones en
-            lino y lino-algodón, con la precisión de la sastrería y la frescura
-            del Caribe. Por colección o diseñado a tu gusto.
+            {content.about_story}
           </p>
         </Reveal>
       </section>
@@ -31,8 +30,8 @@ export default function SobreNosotrosPage() {
       {/* Imagen ancha */}
       <Reveal as="section" className="relative h-[55vh] min-h-[380px] w-full overflow-hidden">
         <Image
-          src="https://images.unsplash.com/photo-1520006403909-838d6b92c22e?auto=format&fit=crop&w=1920&q=80"
-          alt="Costa dominicana"
+          src={content.about_band_image}
+          alt="Coral Coast"
           fill
           className="object-cover"
           sizes="100vw"
@@ -43,22 +42,12 @@ export default function SobreNosotrosPage() {
       <section className="container-luxe py-24 md:py-32 grid md:grid-cols-12 gap-10">
         <Reveal className="md:col-span-4">
           <h2 className="text-3xl md:text-4xl text-navy leading-tight">
-            Menos, pero mejor.
+            {content.about_manifesto_title}
           </h2>
         </Reveal>
         <Reveal delay={0.12} className="md:col-span-7 md:col-start-6 space-y-5 text-navy/70 font-light text-lg leading-relaxed">
-          <p>
-            No producimos por temporada ni por tendencia. Confeccionamos prendas
-            hechas para durar: chacabanas de ocasión, trajes de lino para bodas
-            al aire libre, bermudas y pantalones que caen impecables bajo el sol.
-            Cada una, cortada a tu medida.
-          </p>
-          <p>
-            Trabajamos por cita, en estudio privado o a domicilio, porque creemos
-            en la atención sin prisa. Tomamos tus medidas, elegimos tejido y
-            corte contigo, y el cierre ocurre por WhatsApp — directo y sin
-            fricción.
-          </p>
+          <p>{content.about_manifesto_p1}</p>
+          <p>{content.about_manifesto_p2}</p>
         </Reveal>
       </section>
 

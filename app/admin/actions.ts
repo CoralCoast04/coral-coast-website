@@ -24,6 +24,8 @@ export async function signIn(
   const { error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
+    if (error.code === "email_not_confirmed")
+      return { error: "Tu usuario no está confirmado. Confírmalo en Supabase (Authentication → Users)." };
     return { error: "Credenciales inválidas. Inténtalo de nuevo." };
   }
 

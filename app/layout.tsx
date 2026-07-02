@@ -23,15 +23,15 @@ const inter = Inter({
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.coralcoastrd.com"),
   title: {
-    default: "Coral Coast — Sastrería a la medida en lino",
+    default: "Coral Coast — Casa de diseño dominicana",
     template: "%s · Coral Coast",
   },
   description:
-    "Coral Coast: estudio dominicano de sastrería a la medida. Chacabanas, trajes, bermudas y pantalones en lino y lino-algodón. Atención por cita, en estudio o a domicilio. Cierre por WhatsApp.",
+    "Coral Coast: casa de diseño dominicana. Chacabanas, trajes, bermudas y pantalones en lino y otros tejidos nobles. De colección o a tu medida. Atención por cita, en estudio o a domicilio. Cierre por WhatsApp.",
   openGraph: {
-    title: "Coral Coast — Sastrería a la medida en lino",
+    title: "Coral Coast — Casa de diseño dominicana",
     description:
-      "Diseño sartorial dominicano en lino y lino-algodón. Por colección o a tu medida, atendido en estudio privado.",
+      "Moda dominicana en lino y otros tejidos nobles. Por colección o a tu medida, desde nuestro estudio privado.",
     url: "https://www.coralcoastrd.com",
     siteName: "Coral Coast",
     type: "website",

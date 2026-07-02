@@ -12,12 +12,14 @@ import { effectivePrice } from "@/lib/format";
 import type { Product } from "@/lib/products";
 
 export type CartItem = {
+  key: string; // id + talla (para diferenciar la misma pieza en distinta talla)
   id: string;
   slug: string;
   name: string;
   image_url: string;
   price: number;
   sale_price: number | null;
+  size: string; // talla elegida o "A la medida"
   qty: number;
 };
 
@@ -33,9 +35,9 @@ type CartContextType = {
   isOpen: boolean;
   openCart: () => void;
   closeCart: () => void;
-  addItem: (product: Product, qty?: number) => void;
-  removeItem: (id: string) => void;
-  setQty: (id: string, qty: number) => void;
+  addItem: (product: Product, size: string, qty?: number) => void;
+  removeItem: (key: string) => void;
+  setQty: (key: string, qty: number) => void;
   clear: () => void;
   applyCoupon: (c: AppliedCoupon) => void;
   removeCoupon: () => void;
@@ -76,23 +78,26 @@ export function CartProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ items, coupon }));
   }, [items, coupon, hydrated]);
 
-  function addItem(product: Product, qty = 1) {
+  function addItem(product: Product, size: string, qty = 1) {
+    const key = `${product.id}::${size}`;
     setItems((prev) => {
-      const existing = prev.find((i) => i.id === product.id);
+      const existing = prev.find((i) => i.key === key);
       if (existing) {
         return prev.map((i) =>
-          i.id === product.id ? { ...i, qty: i.qty + qty } : i
+          i.key === key ? { ...i, qty: i.qty + qty } : i
         );
       }
       return [
         ...prev,
         {
+          key,
           id: product.id,
           slug: product.slug,
           name: product.name,
           image_url: product.image_url,
           price: product.price,
           sale_price: product.sale_price,
+          size,
           qty,
         },
       ];
@@ -100,14 +105,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setIsOpen(true);
   }
 
-  function removeItem(id: string) {
-    setItems((prev) => prev.filter((i) => i.id !== id));
+  function removeItem(key: string) {
+    setItems((prev) => prev.filter((i) => i.key !== key));
   }
 
-  function setQty(id: string, qty: number) {
+  function setQty(key: string, qty: number) {
     setItems((prev) =>
       prev
-        .map((i) => (i.id === id ? { ...i, qty: Math.max(0, qty) } : i))
+        .map((i) => (i.key === key ? { ...i, qty: Math.max(0, qty) } : i))
         .filter((i) => i.qty > 0)
     );
   }

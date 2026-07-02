@@ -13,24 +13,28 @@ import {
   saveCoupon,
   deleteCoupon,
   updateOrderStatus,
+  saveContent,
   type ActionState,
 } from "./manage-actions";
+import { CONTENT_FIELDS, CONTENT_GROUPS } from "@/lib/content-fields";
 
 /* ------------------------------- Tipos --------------------------------- */
 type Product = {
   id: string; slug: string; name: string; category: string; description: string;
   price: number; sale_price: number | null; fabric: string | null; color: string | null;
-  image_url: string; featured: boolean;
+  image_url: string; featured: boolean; sizes: string[] | null; made_to_measure: boolean;
 };
 type Coupon = {
   id: string; code: string; discount_type: string; discount_value: number;
   active: boolean; min_subtotal: number; expires_at: string | null;
 };
 type Order = {
-  id: string; created_at: string; items: { name: string; qty: number; unit_price: number }[];
+  id: string; created_at: string; items: { name: string; qty: number; unit_price: number; size?: string }[];
   subtotal: number; discount: number; total: number; coupon_code: string | null;
-  customer_name: string | null; customer_phone: string | null; status: string;
+  customer_name: string | null; customer_phone: string | null; customer_email: string | null;
+  tracking_code: string | null; status: string;
 };
+type Subscriber = { id: string; email: string; source: string | null; created_at: string };
 type Appointment = {
   id: string; created_at: string; name: string; email: string | null; phone: string | null;
   preferred_date: string | null; preferred_time: string | null; interest: string | null; notes: string | null;
@@ -63,7 +67,7 @@ function SubmitBtn({ label }: { label: string }) {
   return <button type="submit" disabled={pending} className="btn disabled:opacity-60">{pending ? "Guardando…" : label}</button>;
 }
 
-const TABS = ["Productos", "Cupones", "Órdenes", "Citas", "Mensajes"] as const;
+const TABS = ["Productos", "Cupones", "Órdenes", "Contenido", "Suscriptores", "Citas", "Mensajes"] as const;
 
 export function AdminDashboard(props: {
   email: string;
@@ -72,6 +76,8 @@ export function AdminDashboard(props: {
   orders: Order[];
   appointments: Appointment[];
   messages: Message[];
+  subscribers: Subscriber[];
+  content: Record<string, string>;
 }) {
   const [tab, setTab] = useState<(typeof TABS)[number]>("Productos");
 
@@ -93,7 +99,9 @@ export function AdminDashboard(props: {
         {TABS.map((t) => {
           const counts: Record<string, number> = {
             Productos: props.products.length, Cupones: props.coupons.length,
-            Órdenes: props.orders.length, Citas: props.appointments.length, Mensajes: props.messages.length,
+            Órdenes: props.orders.length, Contenido: CONTENT_FIELDS.length,
+            Suscriptores: props.subscribers.length,
+            Citas: props.appointments.length, Mensajes: props.messages.length,
           };
           return (
             <button key={t} onClick={() => setTab(t)}
@@ -107,6 +115,8 @@ export function AdminDashboard(props: {
       {tab === "Productos" && <ProductManager products={props.products} />}
       {tab === "Cupones" && <CouponManager coupons={props.coupons} />}
       {tab === "Órdenes" && <OrdersPanel orders={props.orders} />}
+      {tab === "Contenido" && <ContentPanel content={props.content} />}
+      {tab === "Suscriptores" && <SubscribersPanel subscribers={props.subscribers} />}
       {tab === "Citas" && <AppointmentsPanel appointments={props.appointments} />}
       {tab === "Mensajes" && <MessagesPanel messages={props.messages} />}
     </div>
@@ -147,14 +157,18 @@ function ProductManager({ products }: { products: Product[] }) {
           <div className="grid sm:grid-cols-2 gap-4">
             <div><label className={label}>Nombre *</label><input name="name" required defaultValue={editing?.name} className={field} /></div>
             <div><label className={label}>Categoría</label>
-              <select name="category" defaultValue={editing?.category ?? "Chacabanas"} className={field}>
-                <option>Chacabanas</option><option>Bermudas</option><option>Trajes</option><option>Pantalones</option>
-              </select>
+              <input name="category" list="cat-list" required defaultValue={editing?.category ?? ""} placeholder="Escribe o elige…" className={field} />
+              <datalist id="cat-list">
+                {Array.from(new Set(products.map((p) => p.category).filter(Boolean))).map((c) => (
+                  <option key={c} value={c} />
+                ))}
+              </datalist>
             </div>
             <div><label className={label}>Precio (RD$)</label><input name="price" type="number" min="0" defaultValue={editing?.price ?? 0} className={field} /></div>
             <div><label className={label}>Oferta (RD$, opcional)</label><input name="sale_price" type="number" min="0" defaultValue={editing?.sale_price ?? ""} className={field} /></div>
-            <div><label className={label}>Tejido</label><input name="fabric" defaultValue={editing?.fabric ?? ""} placeholder="Lino / Lino-algodón" className={field} /></div>
+            <div><label className={label}>Tejido</label><input name="fabric" defaultValue={editing?.fabric ?? ""} placeholder="Lino / Lino texturizado / otro" className={field} /></div>
             <div><label className={label}>Color</label><input name="color" defaultValue={editing?.color ?? ""} className={field} /></div>
+            <div className="sm:col-span-2"><label className={label}>Tallas (separadas por coma)</label><input name="sizes" defaultValue={(editing?.sizes ?? []).join(", ")} placeholder="S, M, L, XL   —   deja vacío si es solo a la medida" className={field} /></div>
           </div>
           <div><label className={label}>Descripción</label><textarea name="description" rows={2} defaultValue={editing?.description} className={field} /></div>
 
@@ -171,9 +185,14 @@ function ProductManager({ products }: { products: Product[] }) {
             )}
           </div>
 
-          <label className="flex items-center gap-2 text-sm text-navy/70">
-            <input type="checkbox" name="featured" defaultChecked={editing?.featured} /> Destacado en Inicio
-          </label>
+          <div className="flex flex-wrap gap-6">
+            <label className="flex items-center gap-2 text-sm text-navy/70">
+              <input type="checkbox" name="featured" defaultChecked={editing?.featured} /> Destacado en Inicio
+            </label>
+            <label className="flex items-center gap-2 text-sm text-navy/70">
+              <input type="checkbox" name="made_to_measure" defaultChecked={editing ? editing.made_to_measure : true} /> Disponible a la medida
+            </label>
+          </div>
 
           <Feedback state={state} />
           <SubmitBtn label={editing ? "Guardar cambios" : "Crear producto"} />
@@ -280,7 +299,7 @@ function CouponManager({ coupons }: { coupons: Coupon[] }) {
 /* =============================== ÓRDENES =============================== */
 function OrdersPanel({ orders }: { orders: Order[] }) {
   const [pending, startTransition] = useTransition();
-  const STATUSES = ["nuevo", "contactado", "cerrado"];
+  const STATUSES = ["nuevo", "confirmado", "en confección", "listo", "entregado"];
   return (
     <div>
       <h2 className="font-serif text-2xl text-navy mb-5">Órdenes</h2>
@@ -290,7 +309,9 @@ function OrdersPanel({ orders }: { orders: Order[] }) {
             <div key={o.id} className="border border-navy/10 bg-white/40 p-5">
               <div className="flex justify-between items-start gap-4 flex-wrap">
                 <div>
+                  {o.tracking_code && <p className="font-serif text-terracota">{o.tracking_code}</p>}
                   <p className="text-navy font-medium">{o.customer_name || "Sin nombre"}{o.customer_phone && <span className="text-navy/50 font-normal"> · {o.customer_phone}</span>}</p>
+                  {o.customer_email && <p className="text-xs text-navy/50">{o.customer_email}</p>}
                   <p className="text-xs text-navy/40">{fmtDate(o.created_at)}</p>
                 </div>
                 <select defaultValue={o.status} disabled={pending}
@@ -359,6 +380,106 @@ function MessagesPanel({ messages }: { messages: Message[] }) {
               </div>
               {m.subject && <p className="mt-1 text-sm text-terracota">{m.subject}</p>}
               <p className="mt-2 text-navy/70 text-sm leading-relaxed">{m.message}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ============================== CONTENIDO ============================== */
+function ContentPanel({ content }: { content: Record<string, string> }) {
+  const [state, action] = useActionState(saveContent, null);
+  const [openGroup, setOpenGroup] = useState<string>(CONTENT_GROUPS[0]);
+
+  return (
+    <div>
+      <h2 className="font-serif text-2xl text-navy mb-2">Textos e imágenes del sitio</h2>
+      <p className="text-sm text-navy/50 mb-6">
+        Edita cualquier texto o imagen de la web. Abre una sección, cambia lo que
+        quieras y guarda — se refleja en el sitio al instante. (Un solo botón guarda todo.)
+      </p>
+
+      <form action={action} className="space-y-3 max-w-3xl">
+        {CONTENT_GROUPS.map((group) => {
+          const fields = CONTENT_FIELDS.filter((f) => f.group === group);
+          const open = openGroup === group;
+          return (
+            <div key={group} className="border border-navy/10 bg-white/40">
+              <button
+                type="button"
+                onClick={() => setOpenGroup(open ? "" : group)}
+                className="w-full flex items-center justify-between px-5 py-4 text-left"
+              >
+                <span className="font-serif text-lg text-navy">{group}</span>
+                <span className={`text-navy/40 transition-transform ${open ? "rotate-90" : ""}`}>›</span>
+              </button>
+              {open && (
+                <div className="px-5 pb-6 space-y-5 border-t border-navy/10 pt-5">
+                  {fields.map((f) => (
+                    <div key={f.key}>
+                      <label className={label}>{f.label}</label>
+                      {f.type === "textarea" ? (
+                        <textarea name={f.key} rows={3} defaultValue={content[f.key] ?? ""} className={field} />
+                      ) : f.type === "image" ? (
+                        <div className="space-y-2">
+                          {content[f.key] && (
+                            <div className="relative h-28 w-44 overflow-hidden bg-arena/20 border border-navy/10">
+                              <Image src={content[f.key]} alt="" fill className="object-cover" sizes="176px" />
+                            </div>
+                          )}
+                          <input type="file" name={`${f.key}__file`} accept="image/*" className="block text-sm text-navy/70" />
+                          <input name={f.key} defaultValue={content[f.key] ?? ""} placeholder="…o pega una URL de imagen" className={field} />
+                        </div>
+                      ) : (
+                        <input name={f.key} defaultValue={content[f.key] ?? ""} className={field} />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+
+        <div className="pt-3">
+          <Feedback state={state} />
+          <div className="mt-3">
+            <SubmitBtn label="Guardar cambios" />
+          </div>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+/* ============================= SUSCRIPTORES ============================ */
+function SubscribersPanel({ subscribers }: { subscribers: Subscriber[] }) {
+  const [copied, setCopied] = useState(false);
+  function copyAll() {
+    navigator.clipboard.writeText(subscribers.map((s) => s.email).join(", "));
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  }
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-5">
+        <h2 className="font-serif text-2xl text-navy">Suscriptores</h2>
+        {subscribers.length > 0 && (
+          <button onClick={copyAll} className="btn btn-outline !py-2.5 !px-5 !text-[0.72rem]">
+            {copied ? "¡Copiado!" : "Copiar correos"}
+          </button>
+        )}
+      </div>
+      {subscribers.length === 0 ? (
+        <p className="text-sm text-navy/50">Aún no hay suscriptores.</p>
+      ) : (
+        <div className="border border-navy/10 bg-white/40 divide-y divide-navy/10">
+          {subscribers.map((s) => (
+            <div key={s.id} className="flex items-center justify-between p-3 text-sm">
+              <span className="text-navy">{s.email}</span>
+              <span className="text-xs text-navy/40">{fmtDate(s.created_at)}</span>
             </div>
           ))}
         </div>

@@ -10,13 +10,15 @@ export type Product = {
   color: string;
   image_url: string;
   featured: boolean;
+  sizes: string[]; // tallas disponibles (ej. ["S","M","L"]) — vacío = solo a la medida
+  made_to_measure: boolean; // también disponible a la medida
 };
 
 /**
- * Colección curada de respaldo (menswear a la medida en lino y lino-algodón).
+ * Colección curada de respaldo (moda a la medida en lino y otros tejidos nobles).
  * Se usa mientras Supabase no esté configurado; luego `getProducts()` lee de
  * la tabla `products`. Las fotos son de referencia — reemplázalas por las tuyas.
- * Los precios son editables desde el panel admin.
+ * Los precios y tallas son editables desde el panel admin.
  */
 export const fallbackProducts: Product[] = [
   {
@@ -33,6 +35,8 @@ export const fallbackProducts: Product[] = [
     image_url:
       "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?auto=format&fit=crop&w=1200&q=80",
     featured: true,
+    sizes: ["S", "M", "L", "XL"],
+    made_to_measure: true,
   },
   {
     id: "2",
@@ -40,14 +44,16 @@ export const fallbackProducts: Product[] = [
     name: "Chacabana Manga Corta",
     category: "Chacabanas",
     description:
-      "Versión fresca en lino-algodón para el día. Caída ligera, hombros precisos, comodidad de clima cálido.",
+      "Versión fresca y ligera para el día. Caída suave y comodidad de clima cálido.",
     price: 5200,
     sale_price: null,
-    fabric: "Lino-algodón",
+    fabric: "Lino texturizado",
     color: "Blanco",
     image_url:
       "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?auto=format&fit=crop&w=1200&q=80",
     featured: false,
+    sizes: ["S", "M", "L", "XL"],
+    made_to_measure: true,
   },
   {
     id: "3",
@@ -63,6 +69,8 @@ export const fallbackProducts: Product[] = [
     image_url:
       "https://images.unsplash.com/photo-1621072156002-e2fccdc0b176?auto=format&fit=crop&w=1200&q=80",
     featured: true,
+    sizes: ["S", "M", "L", "XL"],
+    made_to_measure: true,
   },
   {
     id: "4",
@@ -70,7 +78,7 @@ export const fallbackProducts: Product[] = [
     name: "Bermuda de Lino",
     category: "Bermudas",
     description:
-      "Bermuda sastre de lino en tono arena. Pretina limpia y largo a la rodilla — del estudio a la costa.",
+      "Bermuda de lino en tono arena. Pretina limpia y largo a la rodilla — del estudio a la costa.",
     price: 3900,
     sale_price: null,
     fabric: "Lino",
@@ -78,21 +86,25 @@ export const fallbackProducts: Product[] = [
     image_url:
       "https://images.unsplash.com/photo-1591195853828-11db59a44f6b?auto=format&fit=crop&w=1200&q=80",
     featured: true,
+    sizes: ["30", "32", "34", "36", "38"],
+    made_to_measure: true,
   },
   {
     id: "5",
     slug: "bermuda-lino-algodon-navy",
-    name: "Bermuda Lino-Algodón",
+    name: "Bermuda Estructurada",
     category: "Bermudas",
     description:
       "Estructura sutil y color navy profundo. La bermuda que sube el nivel de un look de verano.",
     price: 4200,
     sale_price: null,
-    fabric: "Lino-algodón",
+    fabric: "Lino estructurado",
     color: "Navy",
     image_url:
       "https://images.unsplash.com/photo-1517445312882-bc9910d016b7?auto=format&fit=crop&w=1200&q=80",
     featured: false,
+    sizes: ["30", "32", "34", "36", "38"],
+    made_to_measure: true,
   },
   {
     id: "6",
@@ -100,7 +112,7 @@ export const fallbackProducts: Product[] = [
     name: "Traje de Lino",
     category: "Trajes",
     description:
-      "Traje de dos piezas en lino navy, entretela ligera y corte natural. Sastrería tropical hecha a mano.",
+      "Traje de dos piezas en lino navy, entretela ligera y caída natural. Confección de autor para el trópico.",
     price: 18500,
     sale_price: null,
     fabric: "Lino",
@@ -108,21 +120,25 @@ export const fallbackProducts: Product[] = [
     image_url:
       "https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=1200&q=80",
     featured: true,
+    sizes: [],
+    made_to_measure: true,
   },
   {
     id: "7",
     slug: "traje-lino-algodon-arena",
-    name: "Traje Lino-Algodón",
+    name: "Traje de Lino Arena",
     category: "Trajes",
     description:
       "Tono arena y textura viva para bodas y eventos de día. Ligereza y caída impecables bajo el sol.",
     price: 16900,
     sale_price: 14900,
-    fabric: "Lino-algodón",
+    fabric: "Lino texturizado",
     color: "Arena",
     image_url:
       "https://images.unsplash.com/photo-1594938291221-94f18cbb5660?auto=format&fit=crop&w=1200&q=80",
     featured: false,
+    sizes: [],
+    made_to_measure: true,
   },
   {
     id: "8",
@@ -138,6 +154,8 @@ export const fallbackProducts: Product[] = [
     image_url:
       "https://images.unsplash.com/photo-1473966968600-fa801b869a1a?auto=format&fit=crop&w=1200&q=80",
     featured: false,
+    sizes: ["30", "32", "34", "36"],
+    made_to_measure: true,
   },
 ];
 
@@ -148,3 +166,6 @@ export const CATEGORIES = [
   "Trajes",
   "Pantalones",
 ] as const;
+
+/** Etiqueta especial para piezas a la medida. */
+export const A_LA_MEDIDA = "A la medida";

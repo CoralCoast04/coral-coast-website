@@ -1,22 +1,25 @@
 import Link from "next/link";
-import { MessageCircle, Mail } from "lucide-react";
+import { MessageCircle, Mail, MapPin } from "lucide-react";
 import { InstagramIcon } from "@/components/icons";
+import { NewsletterForm } from "@/components/NewsletterForm";
 import { waLink, WA_MESSAGES } from "@/lib/whatsapp";
+import { getContent } from "@/lib/content";
 
-export function Footer() {
+export async function Footer() {
+  const content = await getContent();
+
   return (
     <footer className="bg-navy text-fondo/90 mt-24">
-      <div className="container-luxe py-16 grid gap-12 md:grid-cols-3">
+      <div className="container-luxe py-16 grid gap-12 md:grid-cols-2 lg:grid-cols-4">
         <div>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/logo-beige.svg"
             alt="Coral Coast · Dominican Design House"
-            className="h-28 w-auto mb-4"
+            className="h-32 w-auto mb-4"
           />
           <p className="text-sm leading-relaxed text-fondo/70 max-w-xs">
-            Estudio dominicano de sastrería a la medida. Chacabanas, trajes,
-            bermudas y pantalones en lino y lino-algodón.
+            {content.footer_tagline}
           </p>
         </div>
 
@@ -26,6 +29,7 @@ export function Footer() {
             <li><Link href="/coleccion" className="link-underline hover:text-white">Colección</Link></li>
             <li><Link href="/agenda" className="link-underline hover:text-white">Agenda tu cita</Link></li>
             <li><Link href="/sobre-nosotros" className="link-underline hover:text-white">Sobre nosotros</Link></li>
+            <li><Link href="/rastrear" className="link-underline hover:text-white">Rastrea tu pedido</Link></li>
             <li><Link href="/contacto" className="link-underline hover:text-white">Contacto</Link></li>
           </ul>
         </div>
@@ -34,32 +38,22 @@ export function Footer() {
           <p className="eyebrow text-arena mb-4">Contacto</p>
           <ul className="space-y-3 text-sm">
             <li>
-              <a
-                href={waLink(WA_MESSAGES.general)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 hover:text-white"
-              >
+              <a href={waLink(WA_MESSAGES.general)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 hover:text-white">
                 <MessageCircle size={16} /> +1 849 847 9200
               </a>
             </li>
             <li>
-              <a
-                href="mailto:hola@coralcoastrd.com"
-                className="inline-flex items-center gap-2 hover:text-white"
-              >
+              <a href="mailto:hola@coralcoastrd.com" className="inline-flex items-center gap-2 hover:text-white">
                 <Mail size={16} /> hola@coralcoastrd.com
               </a>
             </li>
             <li>
-              <a
-                href="https://instagram.com/coralcoastrd"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 hover:text-white"
-              >
+              <a href="https://instagram.com/coralcoastrd" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 hover:text-white">
                 <InstagramIcon size={16} /> @coralcoastrd
               </a>
+            </li>
+            <li className="flex items-start gap-2 text-fondo/70">
+              <MapPin size={16} className="mt-0.5 shrink-0" /> {content.studio_address}
             </li>
           </ul>
 
@@ -72,6 +66,8 @@ export function Footer() {
             <InstagramIcon size={16} /> Síguenos en Instagram
           </a>
         </div>
+
+        <NewsletterForm />
       </div>
 
       <div className="border-t border-white/10">
