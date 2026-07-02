@@ -19,8 +19,7 @@ export async function Footer() {
             className="h-32 w-auto mb-4"
           />
           <p className="text-sm leading-relaxed text-fondo/70 max-w-xs">
-            Casa de diseño dominicana. Chacabanas, trajes, bermudas y pantalones
-            en lino y otros tejidos nobles — de colección o a tu medida.
+            {content.footer_tagline}
           </p>
         </div>
 

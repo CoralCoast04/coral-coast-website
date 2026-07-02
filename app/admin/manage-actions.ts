@@ -164,11 +164,28 @@ export async function saveContent(
 ): Promise<ActionState> {
   try {
     const supabase = await requireAdmin();
-    const rows = CONTENT_FIELDS.map((f) => ({
-      key: f.key,
-      value: String(formData.get(f.key) ?? ""),
-      updated_at: new Date().toISOString(),
-    }));
+
+    const rows = [];
+    for (const f of CONTENT_FIELDS) {
+      let value = String(formData.get(f.key) ?? "");
+
+      // Campos de imagen: si suben un archivo, lo guardamos en Storage.
+      if (f.type === "image") {
+        const file = formData.get(`${f.key}__file`) as File | null;
+        if (file && file.size > 0) {
+          const ext = file.name.split(".").pop() || "jpg";
+          const path = `site/${f.key}-${Date.now()}.${ext}`;
+          const { error: upErr } = await supabase.storage
+            .from("products")
+            .upload(path, file, { upsert: true, contentType: file.type });
+          if (upErr) throw upErr;
+          value = supabase.storage.from("products").getPublicUrl(path).data.publicUrl;
+        }
+      }
+
+      rows.push({ key: f.key, value, updated_at: new Date().toISOString() });
+    }
+
     const { error } = await supabase
       .from("site_content")
       .upsert(rows, { onConflict: "key" });

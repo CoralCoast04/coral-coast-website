@@ -27,8 +27,7 @@ export default async function ContactoPage() {
             <p className="eyebrow text-salvia mb-4">Conversemos</p>
             <h1 className="text-4xl md:text-6xl text-navy leading-tight">Contacto.</h1>
             <p className="mt-5 text-lg text-navy/65 font-light leading-relaxed">
-              ¿Preguntas sobre una pieza, un pedido especial o una colaboración?
-              Escríbenos y te respondemos con gusto.
+              {content.contacto_text}
             </p>
           </Reveal>
 

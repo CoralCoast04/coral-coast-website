@@ -9,7 +9,11 @@
       "Bash(curl -s -o /dev/null -w 'HTTP %{http_code}\\\\n' 'https://zqlwfgnpjvivrcjjivdx.supabase.co/rest/v1/products?select=id&limit=1' -H 'apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpxbHdmZ25wanZpdnJjamlqdmR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5NDQxODAsImV4cCI6MjA5ODUyMDE4MH0._ViI2e7JXwTnu4BzAKsltZvc2_vaSYtiMtKYMlgpqUE' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpxbHdmZ25wanZpdnJjamlqdmR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5NDQxODAsImV4cCI6MjA5ODUyMDE4MH0._ViI2e7JXwTnu4BzAKsltZvc2_vaSYtiMtKYMlgpqUE')",
       "Bash(echo \"== coupons table ==\")",
       "Bash(curl -s -o /dev/null -w 'HTTP %{http_code}\\\\n' 'https://zqlwfgnpjvivrcjjivdx.supabase.co/rest/v1/coupons?select=id&limit=1' -H 'apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpxbHdmZ25wanZpdnJjamlqdmR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5NDQxODAsImV4cCI6MjA5ODUyMDE4MH0._ViI2e7JXwTnu4BzAKsltZvc2_vaSYtiMtKYMlgpqUE' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpxbHdmZ25wanZpdnJjamlqdmR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5NDQxODAsImV4cCI6MjA5ODUyMDE4MH0._ViI2e7JXwTnu4BzAKsltZvc2_vaSYtiMtKYMlgpqUE')",
-      "Bash(echo \"== count products ==\")"
+      "Bash(echo \"== count products ==\")",
+      "Bash(gh pr create --base main --head feature/carrito-tracking-panel --title 'Carrito, cupones, tracking, panel admin ampliado y actualizaciones de marca' --body ' *)",
+      "Bash(git add *)",
+      "Bash(git commit -q -m ' *)",
+      "Bash(git push *)"
     ]
   }
 }

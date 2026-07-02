@@ -16,7 +16,7 @@ import {
   saveContent,
   type ActionState,
 } from "./manage-actions";
-import { CONTENT_FIELDS } from "@/lib/content-fields";
+import { CONTENT_FIELDS, CONTENT_GROUPS } from "@/lib/content-fields";
 
 /* ------------------------------- Tipos --------------------------------- */
 type Product = {
@@ -388,25 +388,64 @@ function MessagesPanel({ messages }: { messages: Message[] }) {
 /* ============================== CONTENIDO ============================== */
 function ContentPanel({ content }: { content: Record<string, string> }) {
   const [state, action] = useActionState(saveContent, null);
+  const [openGroup, setOpenGroup] = useState<string>(CONTENT_GROUPS[0]);
+
   return (
     <div>
-      <h2 className="font-serif text-2xl text-navy mb-2">Textos del sitio</h2>
+      <h2 className="font-serif text-2xl text-navy mb-2">Textos e imágenes del sitio</h2>
       <p className="text-sm text-navy/50 mb-6">
-        Edita los textos clave de la web y los datos del estudio. Se reflejan en el sitio al guardar.
+        Edita cualquier texto o imagen de la web. Abre una sección, cambia lo que
+        quieras y guarda — se refleja en el sitio al instante. (Un solo botón guarda todo.)
       </p>
-      <form action={action} className="space-y-5 max-w-2xl">
-        {CONTENT_FIELDS.map((f) => (
-          <div key={f.key}>
-            <label className={label}>{f.label}</label>
-            {f.textarea ? (
-              <textarea name={f.key} rows={3} defaultValue={content[f.key] ?? ""} className={field} />
-            ) : (
-              <input name={f.key} defaultValue={content[f.key] ?? ""} className={field} />
-            )}
+
+      <form action={action} className="space-y-3 max-w-3xl">
+        {CONTENT_GROUPS.map((group) => {
+          const fields = CONTENT_FIELDS.filter((f) => f.group === group);
+          const open = openGroup === group;
+          return (
+            <div key={group} className="border border-navy/10 bg-white/40">
+              <button
+                type="button"
+                onClick={() => setOpenGroup(open ? "" : group)}
+                className="w-full flex items-center justify-between px-5 py-4 text-left"
+              >
+                <span className="font-serif text-lg text-navy">{group}</span>
+                <span className={`text-navy/40 transition-transform ${open ? "rotate-90" : ""}`}>›</span>
+              </button>
+              {open && (
+                <div className="px-5 pb-6 space-y-5 border-t border-navy/10 pt-5">
+                  {fields.map((f) => (
+                    <div key={f.key}>
+                      <label className={label}>{f.label}</label>
+                      {f.type === "textarea" ? (
+                        <textarea name={f.key} rows={3} defaultValue={content[f.key] ?? ""} className={field} />
+                      ) : f.type === "image" ? (
+                        <div className="space-y-2">
+                          {content[f.key] && (
+                            <div className="relative h-28 w-44 overflow-hidden bg-arena/20 border border-navy/10">
+                              <Image src={content[f.key]} alt="" fill className="object-cover" sizes="176px" />
+                            </div>
+                          )}
+                          <input type="file" name={`${f.key}__file`} accept="image/*" className="block text-sm text-navy/70" />
+                          <input name={f.key} defaultValue={content[f.key] ?? ""} placeholder="…o pega una URL de imagen" className={field} />
+                        </div>
+                      ) : (
+                        <input name={f.key} defaultValue={content[f.key] ?? ""} className={field} />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+
+        <div className="pt-3">
+          <Feedback state={state} />
+          <div className="mt-3">
+            <SubmitBtn label="Guardar cambios" />
           </div>
-        ))}
-        <Feedback state={state} />
-        <SubmitBtn label="Guardar contenido" />
+        </div>
       </form>
     </div>
   );

@@ -12,11 +12,15 @@ const POSTER =
  * Coloca tu video en /public/hero.mp4 — mientras no exista, se ve el póster.
  */
 export function Hero({
+  eyebrow = "Casa de diseño dominicana · Hecho en RD",
   title = "El Caribe, hecho a tu medida.",
   subtitle = "Chacabanas, trajes, bermudas y pantalones en lino y otros tejidos nobles. Piezas de colección o diseñadas a tu medida.",
+  image = POSTER,
 }: {
+  eyebrow?: string;
   title?: string;
   subtitle?: string;
+  image?: string;
 }) {
   const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -29,7 +33,7 @@ export function Hero({
         muted
         loop
         playsInline
-        poster={POSTER}
+        poster={image}
       >
         <source src="/hero.mp4" type="video/mp4" />
       </video>
@@ -45,7 +49,7 @@ export function Hero({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, ease, delay: 0.2 }}
         >
-          Casa de diseño dominicana · Hecho en RD
+          {eyebrow}
         </motion.p>
 
         <motion.h1

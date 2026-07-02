@@ -3,14 +3,16 @@ import Image from "next/image";
 import { Reveal } from "@/components/Reveal";
 import { AppointmentForm } from "@/components/forms";
 import { CalendarClock, MapPin, Sparkles } from "lucide-react";
+import { getContent } from "@/lib/content";
 
 export const metadata: Metadata = {
   title: "Agenda tu cita",
   description:
-    "Reserva una cita privada para conocer la colección de lino de Coral Coast. Atención personalizada, cierre por WhatsApp.",
+    "Reserva una cita privada en el estudio de Coral Coast. Atención personalizada, cierre por WhatsApp.",
 };
 
-export default function AgendaPage() {
+export default async function AgendaPage() {
+  const content = await getContent();
   return (
     <div className="pt-28 md:pt-36">
       <div className="container-luxe grid lg:grid-cols-2 gap-16 pb-24">
@@ -19,12 +21,10 @@ export default function AgendaPage() {
           <Reveal>
             <p className="eyebrow text-salvia mb-4">Cita privada</p>
             <h1 className="text-4xl md:text-6xl text-navy leading-tight">
-              Agenda tu cita.
+              {content.agenda_title}
             </h1>
             <p className="mt-5 text-lg text-navy/65 font-light leading-relaxed">
-              Reserva una sesión en el estudio privado. Tomamos tus medidas,
-              elegimos tejido y color, y diseñamos la pieza contigo. Elige fecha y
-              hora; confirmamos por WhatsApp o correo.
+              {content.agenda_text}
             </p>
           </Reveal>
 

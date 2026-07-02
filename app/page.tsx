@@ -14,24 +14,25 @@ export default async function Home() {
 
   return (
     <>
-      <Hero title={content.hero_title} subtitle={content.hero_subtitle} />
+      <Hero
+        eyebrow={content.hero_eyebrow}
+        title={content.hero_title}
+        subtitle={content.hero_subtitle}
+        image={content.hero_image}
+      />
 
       {/* Intro editorial */}
       <section className="container-luxe py-24 md:py-32">
         <div className="grid md:grid-cols-12 gap-10 items-center">
           <Reveal className="md:col-span-5">
-            <p className="eyebrow text-salvia mb-4">El estudio</p>
+            <p className="eyebrow text-salvia mb-4">{content.home_intro_eyebrow}</p>
             <h2 className="text-3xl md:text-4xl leading-tight text-navy">
-              Diseño dominicano, hecho a tu medida.
+              {content.home_intro_title}
             </h2>
           </Reveal>
           <Reveal delay={0.15} className="md:col-span-6 md:col-start-7">
             <p className="text-lg text-navy/70 leading-relaxed font-light">
-              Coral Coast es una casa de diseño dominicana dedicada a la ropa a
-              la medida. Trabajamos el lino y otros tejidos nobles para crear
-              chacabanas, trajes, bermudas y pantalones de líneas limpias y caída
-              impecable. Elige una pieza de colección o la diseñamos contigo, a tu
-              gusto — con la atención sin prisa de un estudio privado.
+              {content.home_intro_text}
             </p>
             <Link
               href="/sobre-nosotros"
@@ -46,8 +47,8 @@ export default async function Home() {
       {/* Franja imagen ancha */}
       <Reveal as="section" className="relative h-[60vh] min-h-[420px] w-full overflow-hidden">
         <Image
-          src="https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&w=1920&q=80"
-          alt="Ambiente de lino Coral Coast"
+          src={content.home_band_image}
+          alt="Ambiente Coral Coast"
           fill
           className="object-cover"
           sizes="100vw"
@@ -55,7 +56,7 @@ export default async function Home() {
         <div className="absolute inset-0 bg-navy/25" />
         <div className="container-luxe relative z-10 h-full flex items-end pb-12">
           <p className="font-serif text-white text-2xl md:text-4xl max-w-2xl leading-snug">
-            “Una prenda que cae bien no se nota — se siente.”
+            {content.home_band_quote}
           </p>
         </div>
       </Reveal>
@@ -63,12 +64,9 @@ export default async function Home() {
       {/* Destacados */}
       <section className="container-luxe py-24 md:py-32">
         <Reveal className="text-center max-w-2xl mx-auto mb-16">
-          <p className="eyebrow text-salvia mb-4">Selección</p>
-          <h2 className="text-3xl md:text-5xl text-navy">Piezas destacadas</h2>
-          <p className="mt-4 text-navy/60 font-light">
-            Un vistazo a la colección. Todas las piezas se confeccionan a la
-            medida — el cierre se conversa por WhatsApp.
-          </p>
+          <p className="eyebrow text-salvia mb-4">{content.home_featured_eyebrow}</p>
+          <h2 className="text-3xl md:text-5xl text-navy">{content.home_featured_title}</h2>
+          <p className="mt-4 text-navy/60 font-light">{content.home_featured_text}</p>
         </Reveal>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-12">
@@ -104,28 +102,16 @@ export default async function Home() {
       <section className="bg-arena/25 py-24 md:py-32">
         <div className="container-luxe">
           <Reveal className="text-center max-w-2xl mx-auto mb-16">
-            <p className="eyebrow text-salvia mb-4">Por qué Coral Coast</p>
+            <p className="eyebrow text-salvia mb-4">{content.home_values_eyebrow}</p>
             <h2 className="text-3xl md:text-5xl text-navy">
-              El detalle es el lujo.
+              {content.home_values_title}
             </h2>
           </Reveal>
           <div className="grid md:grid-cols-3 gap-10">
             {[
-              {
-                icon: Scissors,
-                title: "Hecho a tu medida",
-                text: "Cada prenda se corta y ajusta a tu silueta. Sin tallas genéricas — solo tu medida.",
-              },
-              {
-                icon: Leaf,
-                title: "Tejidos nobles",
-                text: "Lino y otros tejidos nobles que respiran bajo el sol y envejecen con carácter.",
-              },
-              {
-                icon: Waves,
-                title: "Estudio privado",
-                text: "Te atendemos por cita, en el estudio o a domicilio. Diseño de colección o a tu gusto.",
-              },
+              { icon: Scissors, title: content.value1_title, text: content.value1_text },
+              { icon: Leaf, title: content.value2_title, text: content.value2_text },
+              { icon: Waves, title: content.value3_title, text: content.value3_text },
             ].map((v, i) => (
               <Reveal key={v.title} delay={i * 0.12} className="text-center">
                 <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-navy text-arena">
@@ -142,14 +128,12 @@ export default async function Home() {
       {/* CTA final */}
       <section className="container-luxe py-24 md:py-32">
         <Reveal className="bg-navy text-white text-center px-6 py-20 md:py-28">
-          <p className="eyebrow text-arena mb-5">Atención personalizada</p>
+          <p className="eyebrow text-arena mb-5">{content.home_cta_eyebrow}</p>
           <h2 className="text-3xl md:text-5xl max-w-2xl mx-auto leading-tight">
-            Reserva una cita en el estudio.
+            {content.home_cta_title}
           </h2>
           <p className="mt-5 max-w-xl mx-auto text-white/70 font-light">
-            Tomamos tus medidas, elegimos tejido y color, y diseñamos la pieza
-            contigo — en el estudio o a domicilio. Cerramos por WhatsApp, a tu
-            ritmo.
+            {content.home_cta_text}
           </p>
           <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/agenda" className="btn !bg-arena !border-arena !text-navy hover:!bg-terracota hover:!border-terracota hover:!text-white">

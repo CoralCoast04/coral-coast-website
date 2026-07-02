@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Reveal } from "@/components/Reveal";
 import { ProductGrid } from "@/components/ProductGrid";
 import { getProducts } from "@/lib/products.server";
+import { getContent } from "@/lib/content";
 import { waLink, WA_MESSAGES } from "@/lib/whatsapp";
 
 export const metadata: Metadata = {
@@ -11,7 +12,7 @@ export const metadata: Metadata = {
 };
 
 export default async function ColeccionPage() {
-  const products = await getProducts();
+  const [products, content] = await Promise.all([getProducts(), getContent()]);
 
   return (
     <div className="pt-28 md:pt-36 pb-8">
@@ -19,12 +20,10 @@ export default async function ColeccionPage() {
         <Reveal className="max-w-2xl mb-14">
           <p className="eyebrow text-salvia mb-4">La colección</p>
           <h1 className="text-4xl md:text-6xl text-navy leading-tight">
-            Piezas de lino, a tu medida.
+            {content.coleccion_title}
           </h1>
           <p className="mt-5 text-lg text-navy/65 font-light leading-relaxed">
-            Chacabanas, bermudas, trajes y pantalones en lino y otros tejidos nobles.
-            Todo se confecciona a la medida: úsalos como punto de partida o
-            diseñamos la pieza contigo. El cierre se conversa por WhatsApp.
+            {content.coleccion_text}
           </p>
         </Reveal>
 
@@ -32,11 +31,10 @@ export default async function ColeccionPage() {
 
         <Reveal className="text-center mt-24 border-t border-navy/10 pt-16">
           <h2 className="font-serif text-2xl md:text-3xl text-navy">
-            ¿Tienes un diseño en mente?
+            {content.coleccion_cta_title}
           </h2>
           <p className="mt-3 text-navy/60 font-light">
-            Cuéntanos qué imaginas — tejido, color, corte — y lo diseñamos a tu
-            gusto.
+            {content.coleccion_cta_text}
           </p>
           <a
             href={waLink(WA_MESSAGES.general)}
