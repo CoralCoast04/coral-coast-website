@@ -33,6 +33,8 @@ type Order = {
   subtotal: number; discount: number; total: number; coupon_code: string | null;
   customer_name: string | null; customer_phone: string | null; customer_email: string | null;
   tracking_code: string | null; status: string;
+  delivery_method: string | null; address: string | null;
+  pickup_date: string | null; pickup_time: string | null; has_gift: boolean | null;
 };
 type Subscriber = { id: string; email: string; source: string | null; created_at: string };
 type Appointment = {
@@ -327,6 +329,14 @@ function OrdersPanel({ orders }: { orders: Order[] }) {
                 <span className="text-navy/60">Subtotal: {formatRD(o.subtotal)}</span>
                 {o.discount > 0 && <span className="text-salvia">Descuento{o.coupon_code ? ` (${o.coupon_code})` : ""}: −{formatRD(o.discount)}</span>}
                 <span className="text-navy font-medium">Total: {formatRD(o.total)}</span>
+              </div>
+              <div className="mt-2 text-sm flex gap-3 flex-wrap items-center">
+                {o.delivery_method === "retiro" ? (
+                  <span className="text-navy/70">🏬 Retiro{o.pickup_date ? ` · ${o.pickup_date}${o.pickup_time ? " " + o.pickup_time : ""}` : ""}</span>
+                ) : o.delivery_method === "envio" ? (
+                  <span className="text-navy/70">🚚 Envío{o.address ? ` · ${o.address}` : ""}</span>
+                ) : null}
+                {o.has_gift && <span className="px-2 py-0.5 rounded-full bg-terracota/15 text-terracota text-xs">🎁 Regalo</span>}
               </div>
             </div>
           ))}

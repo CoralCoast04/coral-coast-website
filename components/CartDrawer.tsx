@@ -3,28 +3,26 @@
 import Image from "next/image";
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { X, Minus, Plus, Trash2, Tag, MessageCircle } from "lucide-react";
+import { X, Minus, Plus, Trash2, Tag, MessageCircle, Gift, Truck, Store } from "lucide-react";
 import { useCart } from "@/lib/cart/CartContext";
 import { effectivePrice, formatRD } from "@/lib/format";
 import { validateCoupon, createOrder } from "@/app/cart-actions";
 import { waLink, buildOrderMessage } from "@/lib/whatsapp";
 
 const ease = [0.22, 1, 0.36, 1] as const;
+const TIME_SLOTS = ["10:00", "11:00", "12:00", "14:00", "15:00", "16:00", "17:00"];
 
-export function CartDrawer() {
+type Props = {
+  giftWrapImage?: string;
+  giftNote?: string;
+  studioAddress?: string;
+  studioHours?: string;
+};
+
+export function CartDrawer({ giftWrapImage, giftNote, studioAddress, studioHours }: Props) {
   const {
-    items,
-    isOpen,
-    closeCart,
-    setQty,
-    removeItem,
-    clear,
-    coupon,
-    applyCoupon,
-    removeCoupon,
-    subtotal,
-    discount,
-    total,
+    items, isOpen, closeCart, setQty, removeItem, toggleGift, clear,
+    coupon, applyCoupon, removeCoupon, subtotal, discount, total,
   } = useCart();
 
   const [code, setCode] = useState("");
@@ -33,7 +31,15 @@ export function CartDrawer() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
+  const [delivery, setDelivery] = useState<"envio" | "retiro">("envio");
+  const [address, setAddress] = useState("");
+  const [pickupDate, setPickupDate] = useState("");
+  const [pickupTime, setPickupTime] = useState("");
   const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const giftCount = items.filter((i) => i.gift).length;
+  const today = new Date().toISOString().slice(0, 10);
 
   async function handleApplyCoupon() {
     if (!code.trim()) return;
@@ -52,37 +58,41 @@ export function CartDrawer() {
 
   async function handleCheckout() {
     if (items.length === 0) return;
+    setError(null);
+    if (delivery === "retiro" && (!pickupDate || !pickupTime)) {
+      setError("Elige fecha y hora para tu retiro en el estudio.");
+      return;
+    }
     setSending(true);
 
     const orderItems = items.map((i) => ({
-      id: i.id,
-      name: i.name,
-      qty: i.qty,
-      unit_price: effectivePrice(i),
-      size: i.size,
+      id: i.id, name: i.name, qty: i.qty, unit_price: effectivePrice(i), size: i.size, gift: i.gift,
     }));
 
-    // Guardar la orden (devuelve el código de seguimiento; no bloquea si falla)
     const res = await createOrder({
       items: orderItems,
-      subtotal,
-      discount,
-      total,
+      subtotal, discount, total,
       coupon_code: coupon?.code ?? null,
       customer_name: name.trim() || null,
       customer_phone: phone.trim() || null,
       customer_email: email.trim() || null,
+      delivery_method: delivery,
+      address: delivery === "envio" ? address.trim() || null : null,
+      pickup_date: delivery === "retiro" ? pickupDate || null : null,
+      pickup_time: delivery === "retiro" ? pickupTime || null : null,
     });
 
     const message = buildOrderMessage({
       items: orderItems,
-      subtotal,
-      discount,
-      total,
+      subtotal, discount, total,
       couponCode: coupon?.code,
       name: name.trim() || null,
       phone: phone.trim() || null,
       trackingCode: res.tracking_code ?? null,
+      delivery,
+      address: delivery === "envio" ? address.trim() || null : null,
+      pickupDate: delivery === "retiro" ? pickupDate || null : null,
+      pickupTime: delivery === "retiro" ? pickupTime || null : null,
     });
 
     window.open(waLink(message), "_blank", "noopener");
@@ -91,29 +101,23 @@ export function CartDrawer() {
     closeCart();
   }
 
+  const inputBase = "bg-transparent border-b border-navy/25 py-2 text-sm text-navy placeholder:text-navy/40 focus:border-terracota focus:outline-none";
+
   return (
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Overlay */}
           <motion.div
             className="fixed inset-0 z-[60] bg-navy/40 backdrop-blur-sm"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.4 }}
-            onClick={closeCart}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            transition={{ duration: 0.4 }} onClick={closeCart}
           />
-
-          {/* Panel */}
           <motion.aside
             className="fixed right-0 top-0 z-[61] h-full w-full max-w-md bg-fondo shadow-2xl flex flex-col"
-            initial={{ x: "100%" }}
-            animate={{ x: 0 }}
-            exit={{ x: "100%" }}
+            initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }}
             transition={{ duration: 0.5, ease }}
           >
-            <header className="flex items-center justify-between px-6 py-5 border-b border-navy/10">
+            <header className="flex items-center justify-between px-6 py-5 border-b border-navy/10 shrink-0">
               <h2 className="font-serif text-2xl text-navy">Tu selección</h2>
               <button onClick={closeCart} aria-label="Cerrar" className="text-navy hover:text-terracota transition-colors">
                 <X size={24} />
@@ -128,9 +132,9 @@ export function CartDrawer() {
                 </button>
               </div>
             ) : (
-              <>
+              <div className="flex-1 overflow-y-auto">
                 {/* Items */}
-                <div className="flex-1 overflow-y-auto px-6 py-4 space-y-5">
+                <div className="px-6 py-4 space-y-5">
                   {items.map((i) => (
                     <div key={i.key} className="flex gap-4">
                       <div className="relative h-24 w-20 shrink-0 overflow-hidden bg-arena/20">
@@ -153,14 +157,35 @@ export function CartDrawer() {
                           <button onClick={() => setQty(i.key, i.qty + 1)} className="h-7 w-7 flex items-center justify-center border border-navy/20 hover:border-navy/50 transition-colors" aria-label="Más">
                             <Plus size={13} />
                           </button>
+                          <button
+                            onClick={() => toggleGift(i.key)}
+                            className={`ml-auto inline-flex items-center gap-1 px-2.5 py-1 rounded-full border text-[0.68rem] transition-colors ${
+                              i.gift ? "bg-terracota/15 border-terracota text-terracota" : "border-navy/20 text-navy/60 hover:border-navy/50"
+                            }`}
+                          >
+                            <Gift size={13} /> Regalo
+                          </button>
                         </div>
                       </div>
                     </div>
                   ))}
                 </div>
 
-                {/* Pie: cupón, datos y totales */}
-                <div className="border-t border-navy/10 px-6 py-5 space-y-4 bg-white/40">
+                <div className="border-t border-navy/10 px-6 py-5 space-y-5 bg-white/40">
+                  {/* Regalo: envoltura */}
+                  {giftCount > 0 && (
+                    <div className="flex gap-3 items-center bg-arena/20 p-3 rounded">
+                      {giftWrapImage && (
+                        <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded">
+                          <Image src={giftWrapImage} alt="Envoltura de regalo" fill className="object-cover" sizes="64px" />
+                        </div>
+                      )}
+                      <p className="text-xs text-navy/70 leading-relaxed">
+                        {giftNote || "Envolvemos tus piezas de regalo en nuestro empaque especial."}
+                      </p>
+                    </div>
+                  )}
+
                   {/* Cupón */}
                   {coupon ? (
                     <div className="flex items-center justify-between text-sm">
@@ -174,57 +199,69 @@ export function CartDrawer() {
                   ) : (
                     <div>
                       <div className="flex gap-2">
-                        <input
-                          value={code}
-                          onChange={(e) => setCode(e.target.value)}
-                          onKeyDown={(e) => e.key === "Enter" && handleApplyCoupon()}
-                          placeholder="Código de cupón"
-                          className="flex-1 bg-transparent border-b border-navy/25 py-2 text-sm text-navy placeholder:text-navy/40 focus:border-terracota focus:outline-none uppercase"
-                        />
+                        <input value={code} onChange={(e) => setCode(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleApplyCoupon()} placeholder="Código de cupón" className={`flex-1 ${inputBase} uppercase`} />
                         <button onClick={handleApplyCoupon} disabled={checking} className="text-sm tracking-wide text-navy hover:text-terracota transition-colors disabled:opacity-50">
                           {checking ? "…" : "Aplicar"}
                         </button>
                       </div>
-                      {couponMsg && (
-                        <p className={`mt-1 text-xs ${couponMsg.ok ? "text-salvia" : "text-terracota"}`}>{couponMsg.text}</p>
-                      )}
+                      {couponMsg && <p className={`mt-1 text-xs ${couponMsg.ok ? "text-salvia" : "text-terracota"}`}>{couponMsg.text}</p>}
                     </div>
                   )}
 
-                  {/* Datos opcionales */}
+                  {/* Datos */}
                   <div className="grid grid-cols-2 gap-3">
-                    <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Tu nombre" className="bg-transparent border-b border-navy/25 py-2 text-sm text-navy placeholder:text-navy/40 focus:border-terracota focus:outline-none" />
-                    <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Teléfono" className="bg-transparent border-b border-navy/25 py-2 text-sm text-navy placeholder:text-navy/40 focus:border-terracota focus:outline-none" />
-                    <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" placeholder="Correo (para confirmación)" className="col-span-2 bg-transparent border-b border-navy/25 py-2 text-sm text-navy placeholder:text-navy/40 focus:border-terracota focus:outline-none" />
+                    <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Tu nombre" className={inputBase} />
+                    <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Teléfono" className={inputBase} />
+                    <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" placeholder="Correo (para confirmación)" className={`col-span-2 ${inputBase}`} />
+                  </div>
+
+                  {/* Entrega */}
+                  <div>
+                    <p className="text-[0.72rem] tracking-[0.2em] uppercase text-navy/50 mb-2">Entrega</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button onClick={() => setDelivery("envio")} className={`flex items-center justify-center gap-2 py-2.5 text-sm border rounded transition-colors ${delivery === "envio" ? "bg-navy text-white border-navy" : "border-navy/20 text-navy/70"}`}>
+                        <Truck size={15} /> Envío
+                      </button>
+                      <button onClick={() => setDelivery("retiro")} className={`flex items-center justify-center gap-2 py-2.5 text-sm border rounded transition-colors ${delivery === "retiro" ? "bg-navy text-white border-navy" : "border-navy/20 text-navy/70"}`}>
+                        <Store size={15} /> Retiro
+                      </button>
+                    </div>
+
+                    {delivery === "envio" ? (
+                      <textarea value={address} onChange={(e) => setAddress(e.target.value)} rows={2} placeholder="Dirección de envío" className={`mt-3 w-full ${inputBase}`} />
+                    ) : (
+                      <div className="mt-3 space-y-3">
+                        <p className="text-xs text-navy/55">
+                          Agenda tu visita al estudio{studioAddress ? ` · ${studioAddress}` : ""}{studioHours ? ` · ${studioHours}` : ""}.
+                        </p>
+                        <div className="grid grid-cols-2 gap-3">
+                          <input type="date" min={today} value={pickupDate} onChange={(e) => setPickupDate(e.target.value)} className={inputBase} />
+                          <select value={pickupTime} onChange={(e) => setPickupTime(e.target.value)} className={inputBase}>
+                            <option value="">Hora…</option>
+                            {TIME_SLOTS.map((t) => <option key={t} value={t}>{t}</option>)}
+                          </select>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Totales */}
                   <div className="space-y-1 text-sm pt-1">
-                    <div className="flex justify-between text-navy/70">
-                      <span>Subtotal</span>
-                      <span>{formatRD(subtotal)}</span>
-                    </div>
-                    {discount > 0 && (
-                      <div className="flex justify-between text-salvia">
-                        <span>Descuento</span>
-                        <span>−{formatRD(discount)}</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between text-navy font-medium text-base pt-1">
-                      <span>Total</span>
-                      <span>{formatRD(total)}</span>
-                    </div>
+                    <div className="flex justify-between text-navy/70"><span>Subtotal</span><span>{formatRD(subtotal)}</span></div>
+                    {discount > 0 && <div className="flex justify-between text-salvia"><span>Descuento</span><span>−{formatRD(discount)}</span></div>}
+                    <div className="flex justify-between text-navy font-medium text-base pt-1"><span>Total</span><span>{formatRD(total)}</span></div>
                   </div>
+
+                  {error && <p className="text-xs text-terracota">{error}</p>}
 
                   <button onClick={handleCheckout} disabled={sending} className="btn w-full disabled:opacity-60">
                     <MessageCircle size={16} /> {sending ? "Preparando…" : "Finalizar por WhatsApp"}
                   </button>
                   <p className="text-[0.7rem] text-navy/45 text-center leading-relaxed">
-                    Las piezas se confeccionan a la medida. El pedido se coordina y
-                    confirma por WhatsApp — sin pago en línea.
+                    El pedido se coordina y confirma por WhatsApp — sin pago en línea.
                   </p>
                 </div>
-              </>
+              </div>
             )}
           </motion.aside>
         </>

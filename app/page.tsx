@@ -148,6 +148,18 @@ export default async function Home() {
             </Reveal>
           ))}
         </div>
+
+        {/* Envoltura de regalo */}
+        <Reveal className="mt-16 grid md:grid-cols-2 gap-8 items-center bg-arena/20 overflow-hidden">
+          <div className="relative aspect-[4/3] md:aspect-auto md:h-full min-h-[260px]">
+            <Image src={content.gift_wrap_image} alt="Envoltura de regalo Coral Coast" fill className="object-cover" sizes="(max-width:768px) 100vw, 50vw" />
+          </div>
+          <div className="p-8 md:p-12">
+            <p className="eyebrow text-salvia mb-3">Detalle</p>
+            <h3 className="font-serif text-2xl md:text-3xl text-navy mb-3">Empaque de regalo</h3>
+            <p className="text-navy/65 font-light leading-relaxed">{content.gift_note}</p>
+          </div>
+        </Reveal>
       </section>
 
       {/* CTA final */}

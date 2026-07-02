@@ -9,6 +9,7 @@ import { CartDrawer } from "@/components/CartDrawer";
 import { WishlistProvider } from "@/lib/wishlist/WishlistContext";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/server";
 import { getWishlistIds } from "@/app/wishlist-actions";
+import { getContent } from "@/lib/content";
 
 const cormorant = Cormorant_Garamond({
   variable: "--font-cormorant",
@@ -59,6 +60,7 @@ export default async function RootLayout({
     }
   }
   const wishlistIds = userEmail ? await getWishlistIds() : [];
+  const content = await getContent();
 
   return (
     <html
@@ -72,7 +74,12 @@ export default async function RootLayout({
             <main className="flex-1">{children}</main>
             <Footer />
             <WhatsAppFloat />
-            <CartDrawer />
+            <CartDrawer
+              giftWrapImage={content.gift_wrap_image}
+              giftNote={content.gift_note}
+              studioAddress={content.studio_address}
+              studioHours={content.studio_hours}
+            />
           </WishlistProvider>
         </CartProvider>
       </body>

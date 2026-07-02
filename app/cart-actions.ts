@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/server";
-import { sendOrderConfirmation } from "@/lib/email";
+import { sendOrderConfirmation, sendOrderNotification } from "@/lib/email";
 
 /** Genera un código de seguimiento tipo CC-7F3K9. */
 function makeTrackingCode(): string {
@@ -87,6 +87,7 @@ export type OrderItem = {
   qty: number;
   unit_price: number;
   size?: string;
+  gift?: boolean;
 };
 
 export type OrderPayload = {
@@ -98,6 +99,10 @@ export type OrderPayload = {
   customer_name: string | null;
   customer_phone: string | null;
   customer_email: string | null;
+  delivery_method: "envio" | "retiro" | null;
+  address: string | null;
+  pickup_date: string | null;
+  pickup_time: string | null;
 };
 
 /**
@@ -108,8 +113,10 @@ export async function createOrder(
   payload: OrderPayload
 ): Promise<{ ok: boolean; id?: string; tracking_code: string }> {
   const tracking_code = makeTrackingCode();
+  const has_gift = payload.items.some((i) => i.gift);
 
-  async function emailConfirm() {
+  async function notify() {
+    // Confirmación al cliente
     if (payload.customer_email) {
       await sendOrderConfirmation({
         to: payload.customer_email,
@@ -122,10 +129,24 @@ export async function createOrder(
         couponCode: payload.coupon_code,
       });
     }
+    // Aviso al estudio (hola@coralcoastrd.com)
+    await sendOrderNotification({
+      trackingCode: tracking_code,
+      customerName: payload.customer_name,
+      customerPhone: payload.customer_phone,
+      customerEmail: payload.customer_email,
+      items: payload.items,
+      total: payload.total,
+      deliveryMethod: payload.delivery_method,
+      address: payload.address,
+      pickupDate: payload.pickup_date,
+      pickupTime: payload.pickup_time,
+      hasGift: has_gift,
+    });
   }
 
   if (!isSupabaseConfigured) {
-    await emailConfirm();
+    await notify();
     return { ok: true, tracking_code };
   }
 
@@ -142,6 +163,11 @@ export async function createOrder(
         customer_name: payload.customer_name,
         customer_phone: payload.customer_phone,
         customer_email: payload.customer_email,
+        delivery_method: payload.delivery_method,
+        address: payload.address,
+        pickup_date: payload.pickup_date,
+        pickup_time: payload.pickup_time,
+        has_gift,
         tracking_code,
         status: "nuevo",
       })
@@ -149,7 +175,7 @@ export async function createOrder(
       .single();
 
     if (error) throw error;
-    await emailConfirm();
+    await notify();
     return { ok: true, id: data.id, tracking_code };
   } catch {
     // No bloqueamos el cierre por WhatsApp si falla el guardado.

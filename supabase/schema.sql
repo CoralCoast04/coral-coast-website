@@ -334,3 +334,12 @@ alter table public.wishlists enable row level security;
 drop policy if exists "wishlist_own_all" on public.wishlists;
 create policy "wishlist_own_all" on public.wishlists for all
   to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+-- =============================================================================
+-- v4 · Entrega (envío/retiro), cita de retiro y regalo en órdenes
+-- =============================================================================
+alter table public.orders add column if not exists delivery_method text; -- 'envio' | 'retiro'
+alter table public.orders add column if not exists address text;
+alter table public.orders add column if not exists pickup_date date;
+alter table public.orders add column if not exists pickup_time text;
+alter table public.orders add column if not exists has_gift boolean not null default false;

@@ -21,6 +21,7 @@ export type CartItem = {
   sale_price: number | null;
   size: string; // talla elegida o "A la medida"
   qty: number;
+  gift: boolean; // envolver para regalo
 };
 
 export type AppliedCoupon = {
@@ -38,6 +39,7 @@ type CartContextType = {
   addItem: (product: Product, size: string, qty?: number) => void;
   removeItem: (key: string) => void;
   setQty: (key: string, qty: number) => void;
+  toggleGift: (key: string) => void;
   clear: () => void;
   applyCoupon: (c: AppliedCoupon) => void;
   removeCoupon: () => void;
@@ -99,10 +101,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
           sale_price: product.sale_price,
           size,
           qty,
+          gift: false,
         },
       ];
     });
     setIsOpen(true);
+  }
+
+  function toggleGift(key: string) {
+    setItems((prev) =>
+      prev.map((i) => (i.key === key ? { ...i, gift: !i.gift } : i))
+    );
   }
 
   function removeItem(key: string) {
@@ -147,6 +156,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     addItem,
     removeItem,
     setQty,
+    toggleGift,
     clear,
     applyCoupon: setCoupon,
     removeCoupon: () => setCoupon(null),

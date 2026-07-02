@@ -60,6 +60,10 @@ export const CONTENT_FIELDS: ContentField[] = [
   { key: "ship_item3_title", label: "Punto 3 · Título", group: "Inicio · Envíos", type: "text", def: "Retiro en el estudio" },
   { key: "ship_item3_text", label: "Punto 3 · Texto", group: "Inicio · Envíos", type: "textarea", def: "O recíbela en persona en nuestro estudio privado, por cita." },
 
+  // -------------------------------------------------------------------- Regalo
+  { key: "gift_note", label: "Nota de regalo", group: "Regalo", type: "textarea", def: "¿Es un regalo? Lo envolvemos en nuestro empaque especial, sin costo adicional." },
+  { key: "gift_wrap_image", label: "Foto de la envoltura", group: "Regalo", type: "image", def: U("photo-1549465220-1a8b9238cd48", 1200) },
+
   // ------------------------------------------------------------------- Colección
   { key: "coleccion_title", label: "Título", group: "Colección", type: "text", def: "Piezas de lino, a tu medida." },
   { key: "coleccion_text", label: "Texto", group: "Colección", type: "textarea", def: "Chacabanas, bermudas, trajes y pantalones en lino y otros tejidos nobles. Todo se confecciona a la medida: úsalos como punto de partida o diseñamos la pieza contigo. El cierre se conversa por WhatsApp." },
