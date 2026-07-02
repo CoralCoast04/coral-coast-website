@@ -73,6 +73,7 @@ export async function Footer() {
       <div className="border-t border-white/10">
         <div className="container-luxe py-6 flex flex-col md:flex-row items-center justify-between gap-2 text-xs text-fondo/50">
           <p>© {new Date().getFullYear()} Coral Coast. Santo Domingo, RD.</p>
+          <Link href="/terminos" className="hover:text-white">Términos y Políticas</Link>
           <p>Hecho con lino y calma.</p>
         </div>
       </div>

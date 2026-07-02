@@ -88,6 +88,10 @@ export const CONTENT_FIELDS: ContentField[] = [
   { key: "studio_address", label: "Dirección", group: "Estudio", type: "text", def: "Santo Domingo, República Dominicana" },
   { key: "studio_hours", label: "Horario", group: "Estudio", type: "text", def: "Lunes a sábado · por cita" },
   { key: "studio_maps_url", label: "Enlace de Google Maps (embed opcional)", group: "Estudio", type: "text", def: "" },
+
+  // ------------------------------------------------------- Términos y Políticas
+  { key: "terms_body", label: "Términos y condiciones", group: "Términos y Políticas", type: "textarea", def: "Al comprar en Coral Coast aceptas nuestros términos. Las piezas a la medida se confeccionan según las medidas acordadas; por su naturaleza personalizada, no admiten cambios ni devoluciones salvo defecto de confección. Los precios están en pesos dominicanos (RD$) y pueden cambiar sin previo aviso. El cierre y el pago se coordinan por WhatsApp. Los tiempos de confección y entrega se informan al confirmar el pedido." },
+  { key: "privacy_body", label: "Política de privacidad", group: "Términos y Políticas", type: "textarea", def: "Respetamos tu privacidad. Usamos tus datos (nombre, contacto y correo) únicamente para gestionar tu pedido, tu cita y enviarte novedades si te suscribes. No compartimos tu información con terceros ajenos a la operación. Puedes pedir la baja de nuestras comunicaciones o la eliminación de tus datos escribiéndonos a hola@coralcoastrd.com." },
 ];
 
 export const DEFAULT_CONTENT: Record<string, string> = Object.fromEntries(
