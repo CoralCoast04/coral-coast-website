@@ -6,7 +6,7 @@ import { getProducts } from "@/lib/products.server";
 import { getContent } from "@/lib/content";
 import { formatRD, effectivePrice } from "@/lib/format";
 import { waLink, WA_MESSAGES } from "@/lib/whatsapp";
-import { Leaf, Scissors, Waves } from "lucide-react";
+import { Leaf, Scissors, Waves, Truck, Gift, Store } from "lucide-react";
 
 export default async function Home() {
   const [products, content] = await Promise.all([getProducts(), getContent()]);
@@ -122,6 +122,29 @@ export default async function Home() {
               </Reveal>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Envíos y empaque */}
+      <section className="container-luxe py-24 md:py-32">
+        <Reveal className="text-center max-w-2xl mx-auto mb-16">
+          <p className="eyebrow text-salvia mb-4">{content.ship_eyebrow}</p>
+          <h2 className="text-3xl md:text-5xl text-navy">{content.ship_title}</h2>
+        </Reveal>
+        <div className="grid md:grid-cols-3 gap-10">
+          {[
+            { icon: Truck, title: content.ship_item1_title, text: content.ship_item1_text },
+            { icon: Gift, title: content.ship_item2_title, text: content.ship_item2_text },
+            { icon: Store, title: content.ship_item3_title, text: content.ship_item3_text },
+          ].map((v, i) => (
+            <Reveal key={i} delay={i * 0.12} className="text-center">
+              <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full border border-navy/15 text-terracota">
+                <v.icon size={24} strokeWidth={1.5} />
+              </div>
+              <h3 className="font-serif text-2xl text-navy mb-2">{v.title}</h3>
+              <p className="text-navy/65 font-light leading-relaxed">{v.text}</p>
+            </Reveal>
+          ))}
         </div>
       </section>
 

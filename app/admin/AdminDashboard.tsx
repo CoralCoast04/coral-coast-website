@@ -157,9 +157,12 @@ function ProductManager({ products }: { products: Product[] }) {
           <div className="grid sm:grid-cols-2 gap-4">
             <div><label className={label}>Nombre *</label><input name="name" required defaultValue={editing?.name} className={field} /></div>
             <div><label className={label}>Categoría</label>
-              <select name="category" defaultValue={editing?.category ?? "Chacabanas"} className={field}>
-                <option>Chacabanas</option><option>Bermudas</option><option>Trajes</option><option>Pantalones</option>
-              </select>
+              <input name="category" list="cat-list" required defaultValue={editing?.category ?? ""} placeholder="Escribe o elige…" className={field} />
+              <datalist id="cat-list">
+                {Array.from(new Set(products.map((p) => p.category).filter(Boolean))).map((c) => (
+                  <option key={c} value={c} />
+                ))}
+              </datalist>
             </div>
             <div><label className={label}>Precio (RD$)</label><input name="price" type="number" min="0" defaultValue={editing?.price ?? 0} className={field} /></div>
             <div><label className={label}>Oferta (RD$, opcional)</label><input name="sale_price" type="number" min="0" defaultValue={editing?.sale_price ?? ""} className={field} /></div>

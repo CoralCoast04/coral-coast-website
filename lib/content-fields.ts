@@ -50,6 +50,16 @@ export const CONTENT_FIELDS: ContentField[] = [
   { key: "home_cta_title", label: "Título", group: "Inicio · CTA", type: "text", def: "Reserva una cita en el estudio." },
   { key: "home_cta_text", label: "Texto", group: "Inicio · CTA", type: "textarea", def: "Tomamos tus medidas, elegimos tejido y color, y diseñamos la pieza contigo — en el estudio o a domicilio. Cerramos por WhatsApp, a tu ritmo." },
 
+  // -------------------------------------------------------------- Inicio · Envíos
+  { key: "ship_eyebrow", label: "Etiqueta", group: "Inicio · Envíos", type: "text", def: "Compra con confianza" },
+  { key: "ship_title", label: "Título", group: "Inicio · Envíos", type: "text", def: "Envíos y empaque de regalo" },
+  { key: "ship_item1_title", label: "Punto 1 · Título", group: "Inicio · Envíos", type: "text", def: "Envío a todo el país" },
+  { key: "ship_item1_text", label: "Punto 1 · Texto", group: "Inicio · Envíos", type: "textarea", def: "Coordinamos la entrega a cualquier punto de la República Dominicana." },
+  { key: "ship_item2_title", label: "Punto 2 · Título", group: "Inicio · Envíos", type: "text", def: "Empaque de regalo" },
+  { key: "ship_item2_text", label: "Punto 2 · Texto", group: "Inicio · Envíos", type: "textarea", def: "Cada pieza llega en un empaque cuidado, listo para regalar." },
+  { key: "ship_item3_title", label: "Punto 3 · Título", group: "Inicio · Envíos", type: "text", def: "Retiro en el estudio" },
+  { key: "ship_item3_text", label: "Punto 3 · Texto", group: "Inicio · Envíos", type: "textarea", def: "O recíbela en persona en nuestro estudio privado, por cita." },
+
   // ------------------------------------------------------------------- Colección
   { key: "coleccion_title", label: "Título", group: "Colección", type: "text", def: "Piezas de lino, a tu medida." },
   { key: "coleccion_text", label: "Texto", group: "Colección", type: "textarea", def: "Chacabanas, bermudas, trajes y pantalones en lino y otros tejidos nobles. Todo se confecciona a la medida: úsalos como punto de partida o diseñamos la pieza contigo. El cierre se conversa por WhatsApp." },

@@ -5,14 +5,20 @@ import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Plus, Check } from "lucide-react";
 import type { Product } from "@/lib/products";
-import { CATEGORIES, A_LA_MEDIDA } from "@/lib/products";
+import { A_LA_MEDIDA } from "@/lib/products";
 import { formatRD } from "@/lib/format";
 import { useCart } from "@/lib/cart/CartContext";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
 export function ProductGrid({ products }: { products: Product[] }) {
-  const [active, setActive] = useState<(typeof CATEGORIES)[number]>("Todo");
+  const [active, setActive] = useState<string>("Todo");
+
+  // Categorías derivadas de los productos (ilimitadas, en orden de aparición).
+  const categories = useMemo(
+    () => ["Todo", ...Array.from(new Set(products.map((p) => p.category).filter(Boolean)))],
+    [products]
+  );
 
   const filtered = useMemo(
     () =>
@@ -26,7 +32,7 @@ export function ProductGrid({ products }: { products: Product[] }) {
     <div>
       {/* Filtros */}
       <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 mb-12">
-        {CATEGORIES.map((cat) => (
+        {categories.map((cat) => (
           <button
             key={cat}
             onClick={() => setActive(cat)}
