@@ -8,6 +8,7 @@ import type { Product } from "@/lib/products";
 import { A_LA_MEDIDA } from "@/lib/products";
 import { formatRD } from "@/lib/format";
 import { useCart } from "@/lib/cart/CartContext";
+import { WishlistHeart } from "@/components/WishlistHeart";
 import { waLink, WA_MESSAGES } from "@/lib/whatsapp";
 
 export function ProductDetail({ product }: { product: Product }) {
@@ -43,6 +44,7 @@ export function ProductDetail({ product }: { product: Product }) {
             Oferta
           </span>
         )}
+        <WishlistHeart productId={product.id} size={20} className="absolute top-4 right-4 h-10 w-10" />
       </div>
 
       {/* Info */}

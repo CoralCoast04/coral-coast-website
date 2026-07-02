@@ -9,6 +9,7 @@ import type { Product } from "@/lib/products";
 import { A_LA_MEDIDA } from "@/lib/products";
 import { formatRD } from "@/lib/format";
 import { useCart } from "@/lib/cart/CartContext";
+import { WishlistHeart } from "@/components/WishlistHeart";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -130,6 +131,7 @@ function ProductCard({ p, index }: { p: Product; index: number }) {
             Oferta
           </span>
         )}
+        <WishlistHeart productId={p.id} size={15} className="absolute top-2 right-2 h-7 w-7" />
       </Link>
 
       <div className="pt-3 flex flex-col flex-1">

@@ -3,6 +3,7 @@ import { createClient, isSupabaseConfigured } from "@/lib/supabase/server";
 import { getContent } from "@/lib/content";
 import { LoginForm } from "./LoginForm";
 import { AdminDashboard } from "./AdminDashboard";
+import { signOut } from "./actions";
 
 export const metadata: Metadata = {
   title: "Panel",
@@ -38,6 +39,24 @@ export default async function AdminPage() {
           <p className="eyebrow text-salvia mb-3">Acceso privado</p>
           <h1 className="font-serif text-3xl text-navy mb-6">Panel Coral Coast</h1>
           <LoginForm />
+        </div>
+      </Shell>
+    );
+  }
+
+  // Si is_admin() aún no existe (schema v3 sin correr), no bloqueamos.
+  const { data: isAdmin, error: adminErr } = await supabase.rpc("is_admin");
+  if (!adminErr && !isAdmin) {
+    return (
+      <Shell>
+        <div className="bg-white/60 border border-navy/10 p-8 max-w-md mx-auto text-center">
+          <h1 className="font-serif text-2xl text-navy mb-3">Acceso restringido</h1>
+          <p className="text-navy/70 text-sm">
+            Tu cuenta ({user.email}) no tiene permisos de administrador.
+          </p>
+          <form action={signOut} className="mt-6">
+            <button className="btn btn-outline">Cerrar sesión</button>
+          </form>
         </div>
       </Shell>
     );

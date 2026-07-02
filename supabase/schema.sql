@@ -259,3 +259,78 @@ as $$
 $$;
 
 grant execute on function public.get_order_status(text) to anon, authenticated;
+
+-- =============================================================================
+-- v3 · Administradores, seguridad del panel y wishlist de clientes
+-- =============================================================================
+
+-- ADMINS: correos con acceso al panel. IMPORTANTE: inserta aquí tu correo admin.
+create table if not exists public.admins ( email text primary key );
+alter table public.admins enable row level security;
+drop policy if exists "admins_self_read" on public.admins;
+create policy "admins_self_read" on public.admins for select to authenticated using (true);
+
+-- ¿El usuario actual es admin? (bootstrap: si la tabla está vacía, permite —
+-- recuerda insertar tu correo para activar el blindaje).
+create or replace function public.is_admin()
+returns boolean
+language sql stable security definer set search_path = public
+as $$
+  select (not exists (select 1 from public.admins))
+      or exists (
+        select 1 from public.admins a
+        where lower(a.email) = lower(coalesce(auth.jwt() ->> 'email', ''))
+      );
+$$;
+grant execute on function public.is_admin() to anon, authenticated;
+
+-- Reforzar políticas de escritura/lectura de admin para exigir is_admin()
+drop policy if exists "products_admin_write" on public.products;
+create policy "products_admin_write" on public.products for all
+  to authenticated using (public.is_admin()) with check (public.is_admin());
+
+drop policy if exists "coupons_admin_write" on public.coupons;
+create policy "coupons_admin_write" on public.coupons for all
+  to authenticated using (public.is_admin()) with check (public.is_admin());
+
+drop policy if exists "orders_admin_read" on public.orders;
+create policy "orders_admin_read" on public.orders for select
+  to authenticated using (public.is_admin());
+drop policy if exists "orders_admin_update" on public.orders;
+create policy "orders_admin_update" on public.orders for update
+  to authenticated using (public.is_admin()) with check (public.is_admin());
+
+drop policy if exists "subscribers_admin_read" on public.subscribers;
+create policy "subscribers_admin_read" on public.subscribers for select
+  to authenticated using (public.is_admin());
+
+drop policy if exists "site_content_admin_write" on public.site_content;
+create policy "site_content_admin_write" on public.site_content for all
+  to authenticated using (public.is_admin()) with check (public.is_admin());
+
+drop policy if exists "appointments_admin_read" on public.appointments;
+create policy "appointments_admin_read" on public.appointments for select
+  to authenticated using (public.is_admin());
+
+drop policy if exists "messages_admin_read" on public.messages;
+create policy "messages_admin_read" on public.messages for select
+  to authenticated using (public.is_admin());
+
+drop policy if exists "product_images_admin_write" on storage.objects;
+create policy "product_images_admin_write" on storage.objects for all
+  to authenticated using (bucket_id = 'products' and public.is_admin())
+  with check (bucket_id = 'products' and public.is_admin());
+
+-- WISHLIST (favoritos por cliente)
+create table if not exists public.wishlists (
+  id         uuid primary key default gen_random_uuid(),
+  user_id    uuid not null references auth.users(id) on delete cascade,
+  product_id text not null,
+  created_at timestamptz not null default now(),
+  unique (user_id, product_id)
+);
+alter table public.wishlists enable row level security;
+
+drop policy if exists "wishlist_own_all" on public.wishlists;
+create policy "wishlist_own_all" on public.wishlists for all
+  to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());

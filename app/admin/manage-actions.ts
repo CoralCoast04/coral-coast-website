@@ -27,6 +27,9 @@ async function requireAdmin() {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error("No autorizado.");
+  // Si is_admin() aún no existe (schema v3 sin correr), no bloqueamos.
+  const { data: admin, error } = await supabase.rpc("is_admin");
+  if (!error && !admin) throw new Error("No autorizado.");
   return supabase;
 }
 
