@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/server";
+import { getContent } from "@/lib/content";
 import { LoginForm } from "./LoginForm";
 import { AdminDashboard } from "./AdminDashboard";
 
@@ -42,13 +43,16 @@ export default async function AdminPage() {
     );
   }
 
-  const [products, coupons, orders, appointments, messages] = await Promise.all([
-    supabase.from("products").select("*").order("featured", { ascending: false }).order("name"),
-    supabase.from("coupons").select("*").order("created_at", { ascending: false }),
-    supabase.from("orders").select("*").order("created_at", { ascending: false }),
-    supabase.from("appointments").select("*").order("created_at", { ascending: false }),
-    supabase.from("messages").select("*").order("created_at", { ascending: false }),
-  ]);
+  const [products, coupons, orders, appointments, messages, subscribers, content] =
+    await Promise.all([
+      supabase.from("products").select("*").order("featured", { ascending: false }).order("name"),
+      supabase.from("coupons").select("*").order("created_at", { ascending: false }),
+      supabase.from("orders").select("*").order("created_at", { ascending: false }),
+      supabase.from("appointments").select("*").order("created_at", { ascending: false }),
+      supabase.from("messages").select("*").order("created_at", { ascending: false }),
+      supabase.from("subscribers").select("*").order("created_at", { ascending: false }),
+      getContent(),
+    ]);
 
   return (
     <Shell>
@@ -59,6 +63,8 @@ export default async function AdminPage() {
         orders={orders.data ?? []}
         appointments={appointments.data ?? []}
         messages={messages.data ?? []}
+        subscribers={subscribers.data ?? []}
+        content={content}
       />
     </Shell>
   );

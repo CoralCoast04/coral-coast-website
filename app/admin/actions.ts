@@ -24,7 +24,8 @@ export async function signIn(
   const { error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
-    return { error: "Credenciales inválidas. Inténtalo de nuevo." };
+    // Diagnóstico temporal: mostramos el mensaje/código real de Supabase.
+    return { error: `Error: ${error.message} (código: ${error.code ?? error.status ?? "?"})` };
   }
 
   revalidatePath("/admin");

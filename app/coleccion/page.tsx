@@ -19,10 +19,10 @@ export default async function ColeccionPage() {
         <Reveal className="max-w-2xl mb-14">
           <p className="eyebrow text-salvia mb-4">La colección</p>
           <h1 className="text-4xl md:text-6xl text-navy leading-tight">
-            Sastrería en lino, a tu medida.
+            Piezas de lino, a tu medida.
           </h1>
           <p className="mt-5 text-lg text-navy/65 font-light leading-relaxed">
-            Chacabanas, bermudas, trajes y pantalones en lino y lino-algodón.
+            Chacabanas, bermudas, trajes y pantalones en lino y otros tejidos nobles.
             Todo se confecciona a la medida: úsalos como punto de partida o
             diseñamos la pieza contigo. El cierre se conversa por WhatsApp.
           </p>

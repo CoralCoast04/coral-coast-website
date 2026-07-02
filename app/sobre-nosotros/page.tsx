@@ -2,14 +2,16 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { Reveal } from "@/components/Reveal";
+import { getContent } from "@/lib/content";
 
 export const metadata: Metadata = {
   title: "Sobre nosotros",
   description:
-    "La historia de Coral Coast: lino de lujo nacido en la costa dominicana. Menos, pero mejor.",
+    "La historia de Coral Coast: casa de diseño dominicana. Menos, pero mejor.",
 };
 
-export default function SobreNosotrosPage() {
+export default async function SobreNosotrosPage() {
+  const content = await getContent();
   return (
     <div className="pt-28 md:pt-36">
       {/* Encabezado */}
@@ -20,10 +22,7 @@ export default function SobreNosotrosPage() {
             Nacidos junto al mar, hechos con calma.
           </h1>
           <p className="mt-6 text-lg md:text-xl text-navy/65 font-light leading-relaxed">
-            Coral Coast es un estudio de diseño dominicano dedicado a la ropa a la
-            medida. Confeccionamos chacabanas, trajes, bermudas y pantalones en
-            lino y lino-algodón, con la precisión de la sastrería y la frescura
-            del Caribe. Por colección o diseñado a tu gusto.
+            {content.about_story}
           </p>
         </Reveal>
       </section>
@@ -51,12 +50,12 @@ export default function SobreNosotrosPage() {
             No producimos por temporada ni por tendencia. Confeccionamos prendas
             hechas para durar: chacabanas de ocasión, trajes de lino para bodas
             al aire libre, bermudas y pantalones que caen impecables bajo el sol.
-            Cada una, cortada a tu medida.
+            Cada una, hecha a tu medida.
           </p>
           <p>
             Trabajamos por cita, en estudio privado o a domicilio, porque creemos
             en la atención sin prisa. Tomamos tus medidas, elegimos tejido y
-            corte contigo, y el cierre ocurre por WhatsApp — directo y sin
+            estilo contigo, y el cierre ocurre por WhatsApp — directo y sin
             fricción.
           </p>
         </Reveal>

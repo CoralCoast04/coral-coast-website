@@ -46,9 +46,9 @@ export function Navbar() {
         <Link href="/" aria-label="Coral Coast — Inicio" className="flex items-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={transparent ? "/logo-h-beige.svg" : "/logo-h-navy.svg"}
-            alt="Coral Coast"
-            className="h-10 md:h-12 w-auto"
+            src={transparent ? "/logo-horizontal-beige.svg" : "/logo-horizontal-navy.svg"}
+            alt="Coral Coast · Dominican Design House"
+            className="h-12 md:h-16 w-auto transition-all duration-500"
           />
         </Link>
 

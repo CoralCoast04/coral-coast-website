@@ -11,7 +11,13 @@ const POSTER =
  * Hero con video lifestyle a pantalla completa.
  * Coloca tu video en /public/hero.mp4 — mientras no exista, se ve el póster.
  */
-export function Hero() {
+export function Hero({
+  title = "El Caribe, hecho a tu medida.",
+  subtitle = "Chacabanas, trajes, bermudas y pantalones en lino y otros tejidos nobles. Piezas de colección o diseñadas a tu medida.",
+}: {
+  title?: string;
+  subtitle?: string;
+}) {
   const ease = [0.22, 1, 0.36, 1] as const;
 
   return (
@@ -39,7 +45,7 @@ export function Hero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, ease, delay: 0.2 }}
         >
-          Sastrería a la medida · Hecho en RD
+          Casa de diseño dominicana · Hecho en RD
         </motion.p>
 
         <motion.h1
@@ -48,9 +54,7 @@ export function Hero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1.1, ease, delay: 0.35 }}
         >
-          El Caribe,
-          <br />
-          hecho a tu medida.
+          {title}
         </motion.h1>
 
         <motion.p
@@ -59,8 +63,7 @@ export function Hero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1.1, ease, delay: 0.5 }}
         >
-          Chacabanas, trajes, bermudas y pantalones en lino y lino-algodón.
-          Diseño sartorial de estudio privado — por colección o a tu gusto.
+          {subtitle}
         </motion.p>
 
         <motion.div

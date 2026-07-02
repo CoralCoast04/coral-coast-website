@@ -3,17 +3,18 @@ import Image from "next/image";
 import { Hero } from "@/components/Hero";
 import { Reveal } from "@/components/Reveal";
 import { getProducts } from "@/lib/products.server";
+import { getContent } from "@/lib/content";
 import { formatRD, effectivePrice } from "@/lib/format";
 import { waLink, WA_MESSAGES } from "@/lib/whatsapp";
 import { Leaf, Scissors, Waves } from "lucide-react";
 
 export default async function Home() {
-  const products = await getProducts();
+  const [products, content] = await Promise.all([getProducts(), getContent()]);
   const featured = products.filter((p) => p.featured).slice(0, 3);
 
   return (
     <>
-      <Hero />
+      <Hero title={content.hero_title} subtitle={content.hero_subtitle} />
 
       {/* Intro editorial */}
       <section className="container-luxe py-24 md:py-32">
@@ -21,15 +22,15 @@ export default async function Home() {
           <Reveal className="md:col-span-5">
             <p className="eyebrow text-salvia mb-4">El estudio</p>
             <h2 className="text-3xl md:text-4xl leading-tight text-navy">
-              Sastrería tropical, hecha a mano.
+              Diseño dominicano, hecho a tu medida.
             </h2>
           </Reveal>
           <Reveal delay={0.15} className="md:col-span-6 md:col-start-7">
             <p className="text-lg text-navy/70 leading-relaxed font-light">
-              Coral Coast es un estudio de diseño dominicano dedicado a la ropa a
-              la medida. Trabajamos el lino y el lino-algodón para crear
-              chacabanas, trajes, bermudas y pantalones con corte preciso y caída
-              impecable. Elige una pieza de colección o diseñamos contigo, a tu
+              Coral Coast es una casa de diseño dominicana dedicada a la ropa a
+              la medida. Trabajamos el lino y otros tejidos nobles para crear
+              chacabanas, trajes, bermudas y pantalones de líneas limpias y caída
+              impecable. Elige una pieza de colección o la diseñamos contigo, a tu
               gusto — con la atención sin prisa de un estudio privado.
             </p>
             <Link
@@ -118,7 +119,7 @@ export default async function Home() {
               {
                 icon: Leaf,
                 title: "Tejidos nobles",
-                text: "Lino y lino-algodón que respiran bajo el sol y envejecen con carácter.",
+                text: "Lino y otros tejidos nobles que respiran bajo el sol y envejecen con carácter.",
               },
               {
                 icon: Waves,

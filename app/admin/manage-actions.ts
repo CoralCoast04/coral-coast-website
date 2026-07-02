@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/server";
+import { CONTENT_FIELDS } from "@/lib/content";
 
 export type ActionState = { ok: boolean; message: string } | null;
 
@@ -63,6 +64,10 @@ export async function saveProduct(
       return { ok: false, message: "Agrega una imagen (archivo o URL)." };
 
     const saleRaw = String(formData.get("sale_price") || "").trim();
+    const sizes = String(formData.get("sizes") || "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
     const record = {
       slug,
       name,
@@ -74,6 +79,8 @@ export async function saveProduct(
       color: String(formData.get("color") || "").trim() || null,
       image_url,
       featured: formData.get("featured") === "on",
+      sizes,
+      made_to_measure: formData.get("made_to_measure") === "on",
     };
 
     const query = id
@@ -148,4 +155,28 @@ export async function updateOrderStatus(
   const supabase = await requireAdmin();
   await supabase.from("orders").update({ status }).eq("id", id);
   revalidatePath("/admin");
+}
+
+/* ------------------------------ CONTENIDO ------------------------------ */
+export async function saveContent(
+  _prev: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  try {
+    const supabase = await requireAdmin();
+    const rows = CONTENT_FIELDS.map((f) => ({
+      key: f.key,
+      value: String(formData.get(f.key) ?? ""),
+      updated_at: new Date().toISOString(),
+    }));
+    const { error } = await supabase
+      .from("site_content")
+      .upsert(rows, { onConflict: "key" });
+    if (error) throw error;
+
+    revalidatePath("/", "layout");
+    return { ok: true, message: "Contenido actualizado." };
+  } catch (e) {
+    return { ok: false, message: e instanceof Error ? e.message : "Error al guardar." };
+  }
 }

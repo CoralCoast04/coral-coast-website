@@ -32,6 +32,7 @@ export function CartDrawer() {
   const [checking, setChecking] = useState(false);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [sending, setSending] = useState(false);
 
   async function handleApplyCoupon() {
@@ -58,10 +59,11 @@ export function CartDrawer() {
       name: i.name,
       qty: i.qty,
       unit_price: effectivePrice(i),
+      size: i.size,
     }));
 
-    // Guardar la orden (no bloquea el cierre si falla)
-    await createOrder({
+    // Guardar la orden (devuelve el código de seguimiento; no bloquea si falla)
+    const res = await createOrder({
       items: orderItems,
       subtotal,
       discount,
@@ -69,6 +71,7 @@ export function CartDrawer() {
       coupon_code: coupon?.code ?? null,
       customer_name: name.trim() || null,
       customer_phone: phone.trim() || null,
+      customer_email: email.trim() || null,
     });
 
     const message = buildOrderMessage({
@@ -79,6 +82,7 @@ export function CartDrawer() {
       couponCode: coupon?.code,
       name: name.trim() || null,
       phone: phone.trim() || null,
+      trackingCode: res.tracking_code ?? null,
     });
 
     window.open(waLink(message), "_blank", "noopener");
@@ -128,24 +132,25 @@ export function CartDrawer() {
                 {/* Items */}
                 <div className="flex-1 overflow-y-auto px-6 py-4 space-y-5">
                   {items.map((i) => (
-                    <div key={i.id} className="flex gap-4">
+                    <div key={i.key} className="flex gap-4">
                       <div className="relative h-24 w-20 shrink-0 overflow-hidden bg-arena/20">
                         <Image src={i.image_url} alt={i.name} fill className="object-cover" sizes="80px" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex justify-between gap-2">
                           <h3 className="font-serif text-lg text-navy leading-tight">{i.name}</h3>
-                          <button onClick={() => removeItem(i.id)} aria-label="Quitar" className="text-navy/40 hover:text-terracota transition-colors">
+                          <button onClick={() => removeItem(i.key)} aria-label="Quitar" className="text-navy/40 hover:text-terracota transition-colors">
                             <Trash2 size={16} />
                           </button>
                         </div>
+                        <p className="text-[0.7rem] tracking-[0.14em] uppercase text-navy/45 mt-0.5">Talla: {i.size}</p>
                         <p className="text-sm text-terracota mt-1">{formatRD(effectivePrice(i))}</p>
                         <div className="mt-2 flex items-center gap-3">
-                          <button onClick={() => setQty(i.id, i.qty - 1)} className="h-7 w-7 flex items-center justify-center border border-navy/20 hover:border-navy/50 transition-colors" aria-label="Menos">
+                          <button onClick={() => setQty(i.key, i.qty - 1)} className="h-7 w-7 flex items-center justify-center border border-navy/20 hover:border-navy/50 transition-colors" aria-label="Menos">
                             <Minus size={13} />
                           </button>
                           <span className="text-sm text-navy w-5 text-center">{i.qty}</span>
-                          <button onClick={() => setQty(i.id, i.qty + 1)} className="h-7 w-7 flex items-center justify-center border border-navy/20 hover:border-navy/50 transition-colors" aria-label="Más">
+                          <button onClick={() => setQty(i.key, i.qty + 1)} className="h-7 w-7 flex items-center justify-center border border-navy/20 hover:border-navy/50 transition-colors" aria-label="Más">
                             <Plus size={13} />
                           </button>
                         </div>
@@ -190,6 +195,7 @@ export function CartDrawer() {
                   <div className="grid grid-cols-2 gap-3">
                     <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Tu nombre" className="bg-transparent border-b border-navy/25 py-2 text-sm text-navy placeholder:text-navy/40 focus:border-terracota focus:outline-none" />
                     <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Teléfono" className="bg-transparent border-b border-navy/25 py-2 text-sm text-navy placeholder:text-navy/40 focus:border-terracota focus:outline-none" />
+                    <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" placeholder="Correo (para confirmación)" className="col-span-2 bg-transparent border-b border-navy/25 py-2 text-sm text-navy placeholder:text-navy/40 focus:border-terracota focus:outline-none" />
                   </div>
 
                   {/* Totales */}
