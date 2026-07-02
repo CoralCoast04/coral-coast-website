@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell($tmp = Join-Path $env:TEMP \"coral-scaffold\"; $dest = \"C:\\\\Users\\\\DELL\\\\OneDrive\\\\Desktop\\\\Coral Coast Website\"; Get-ChildItem -Path $tmp -Force | ForEach-Object { Move-Item -Path $_.FullName -Destination $dest -Force }; Remove-Item -Recurse -Force $tmp -ErrorAction SilentlyContinue; Get-ChildItem -Path $dest -Force | Select-Object Name)",
+      "PowerShell(npm install framer-motion @supabase/supabase-js @supabase/ssr lucide-react 2>&1)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(curl -s -o - -w \"\\\\n[HTTP %{http_code}]\\\\n\" http://localhost:3000/)"
+    ]
+  }
+}
