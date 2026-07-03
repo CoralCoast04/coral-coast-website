@@ -95,6 +95,54 @@ export async function sendOrderConfirmation(o: OrderEmailData): Promise<boolean>
   });
 }
 
+const STUDIO_EMAIL = process.env.STUDIO_EMAIL || "hola@coralcoastrd.com";
+
+export type OrderNotifyData = {
+  trackingCode: string;
+  customerName?: string | null;
+  customerPhone?: string | null;
+  customerEmail?: string | null;
+  items: { name: string; qty: number; size?: string; gift?: boolean }[];
+  total: number;
+  deliveryMethod?: "envio" | "retiro" | null;
+  address?: string | null;
+  pickupDate?: string | null;
+  pickupTime?: string | null;
+  hasGift: boolean;
+};
+
+/** Aviso al estudio (hola@coralcoastrd.com) de un nuevo pedido / cita. */
+export async function sendOrderNotification(o: OrderNotifyData): Promise<boolean> {
+  const rows = o.items
+    .map((i) => `<li>${i.qty} × ${i.name}${i.size ? ` (${i.size})` : ""}${i.gift ? " 🎁 regalo" : ""}</li>`)
+    .join("");
+
+  const entrega =
+    o.deliveryMethod === "retiro"
+      ? `<p><strong>Retiro en el estudio</strong>${o.pickupDate ? ` — cita: ${o.pickupDate}${o.pickupTime ? " " + o.pickupTime : ""}` : ""}</p>`
+      : o.deliveryMethod === "envio"
+        ? `<p><strong>Envío a domicilio</strong>${o.address ? `<br>${o.address}` : ""}</p>`
+        : "";
+
+  const body = `
+    <p style="line-height:1.6">Nuevo pedido <strong>${o.trackingCode}</strong>.</p>
+    <p style="line-height:1.6">
+      ${o.customerName ? `Cliente: ${o.customerName}<br>` : ""}
+      ${o.customerPhone ? `Tel: ${o.customerPhone}<br>` : ""}
+      ${o.customerEmail ? `Correo: ${o.customerEmail}` : ""}
+    </p>
+    <ul style="line-height:1.7">${rows}</ul>
+    <p><strong>Total: ${rd(o.total)}</strong></p>
+    ${o.hasGift ? '<p>🎁 Incluye piezas para regalo.</p>' : ""}
+    ${entrega}`;
+
+  return sendEmail({
+    to: STUDIO_EMAIL,
+    subject: `Nuevo pedido ${o.trackingCode}${o.deliveryMethod === "retiro" ? " · cita de retiro" : ""}`,
+    html: shell("Nuevo pedido", body),
+  });
+}
+
 /** Bienvenida a suscriptores de novedades. */
 export async function sendWelcome(to: string): Promise<boolean> {
   const body = `

@@ -27,6 +27,9 @@ async function requireAdmin() {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error("No autorizado.");
+  // Si is_admin() aún no existe (schema v3 sin correr), no bloqueamos.
+  const { data: admin, error } = await supabase.rpc("is_admin");
+  if (!error && !admin) throw new Error("No autorizado.");
   return supabase;
 }
 
@@ -45,23 +48,36 @@ export async function saveProduct(
     const slug =
       String(formData.get("slug") || "").trim() || slugify(name);
 
-    let image_url = String(formData.get("image_url") || "").trim();
-
-    // Subida de imagen (opcional)
-    const file = formData.get("image") as File | null;
-    if (file && file.size > 0) {
-      const ext = file.name.split(".").pop() || "jpg";
-      const path = `${slug}-${Date.now()}.${ext}`;
-      const { error: upErr } = await supabase.storage
-        .from("products")
-        .upload(path, file, { upsert: true, contentType: file.type });
-      if (upErr) throw upErr;
-      const { data: pub } = supabase.storage.from("products").getPublicUrl(path);
-      image_url = pub.publicUrl;
+    // Galería: media existente retenida (JSON) + archivos nuevos (imágenes/videos)
+    let media: { type: "image" | "video"; url: string }[] = [];
+    try {
+      const parsed = JSON.parse(String(formData.get("media_json") || "[]"));
+      if (Array.isArray(parsed)) media = parsed;
+    } catch {
+      /* ignore */
     }
 
+    const files = (formData.getAll("media_files") as File[]).filter(
+      (f) => f && f.size > 0
+    );
+    for (const f of files) {
+      const ext = f.name.split(".").pop() || "bin";
+      const path = `${slug}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("products")
+        .upload(path, f, { upsert: true, contentType: f.type });
+      if (upErr) throw upErr;
+      const url = supabase.storage.from("products").getPublicUrl(path).data.publicUrl;
+      media.push({ type: f.type.startsWith("video") ? "video" : "image", url });
+    }
+
+    // Portada = primera imagen de la galería (o URL existente)
+    const firstImage = media.find((m) => m.type === "image");
+    let image_url = firstImage?.url || String(formData.get("image_url") || "").trim();
+    if (!media.length && image_url) media = [{ type: "image", url: image_url }];
+    if (!image_url && media[0]) image_url = media[0].url;
     if (!image_url)
-      return { ok: false, message: "Agrega una imagen (archivo o URL)." };
+      return { ok: false, message: "Agrega al menos una imagen." };
 
     const saleRaw = String(formData.get("sale_price") || "").trim();
     const sizes = String(formData.get("sizes") || "")
@@ -78,6 +94,7 @@ export async function saveProduct(
       fabric: String(formData.get("fabric") || "").trim() || null,
       color: String(formData.get("color") || "").trim() || null,
       image_url,
+      media,
       featured: formData.get("featured") === "on",
       sizes,
       made_to_measure: formData.get("made_to_measure") === "on",

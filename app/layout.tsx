@@ -6,6 +6,10 @@ import { Footer } from "@/components/Footer";
 import { WhatsAppFloat } from "@/components/WhatsAppFloat";
 import { CartProvider } from "@/lib/cart/CartContext";
 import { CartDrawer } from "@/components/CartDrawer";
+import { WishlistProvider } from "@/lib/wishlist/WishlistContext";
+import { createClient, isSupabaseConfigured } from "@/lib/supabase/server";
+import { getWishlistIds } from "@/app/wishlist-actions";
+import { getContent } from "@/lib/content";
 
 const cormorant = Cormorant_Garamond({
   variable: "--font-cormorant",
@@ -39,9 +43,25 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  // Sesión del cliente (para navbar y wishlist)
+  let userEmail: string | null = null;
+  if (isSupabaseConfigured) {
+    try {
+      const supabase = await createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      userEmail = user?.email ?? null;
+    } catch {
+      /* ignore */
+    }
+  }
+  const wishlistIds = userEmail ? await getWishlistIds() : [];
+  const content = await getContent();
+
   return (
     <html
       lang="es"
@@ -49,11 +69,18 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col bg-fondo text-navy">
         <CartProvider>
-          <Navbar />
-          <main className="flex-1">{children}</main>
-          <Footer />
-          <WhatsAppFloat />
-          <CartDrawer />
+          <WishlistProvider initialIds={wishlistIds} isLoggedIn={!!userEmail}>
+            <Navbar userEmail={userEmail} />
+            <main className="flex-1">{children}</main>
+            <Footer />
+            <WhatsAppFloat />
+            <CartDrawer
+              giftWrapImage={content.gift_wrap_image}
+              giftNote={content.gift_note}
+              studioAddress={content.studio_address}
+              studioHours={content.studio_hours}
+            />
+          </WishlistProvider>
         </CartProvider>
       </body>
     </html>

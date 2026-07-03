@@ -25,6 +25,7 @@ type OrderLine = {
   qty: number;
   unit_price: number;
   size?: string;
+  gift?: boolean;
 };
 
 function rd(n: number): string {
@@ -42,13 +43,18 @@ export function buildOrderMessage(opts: {
   name?: string | null;
   phone?: string | null;
   trackingCode?: string | null;
+  delivery?: "envio" | "retiro" | null;
+  address?: string | null;
+  pickupDate?: string | null;
+  pickupTime?: string | null;
 }): string {
   const lines: string[] = [];
   lines.push("Hola Coral Coast 🌾 Quiero hacer este pedido:");
   lines.push("");
   opts.items.forEach((i) => {
     const size = i.size ? ` (${i.size})` : "";
-    lines.push(`• ${i.qty} × ${i.name}${size} — ${rd(i.unit_price * i.qty)}`);
+    const gift = i.gift ? " 🎁 regalo" : "";
+    lines.push(`• ${i.qty} × ${i.name}${size}${gift} — ${rd(i.unit_price * i.qty)}`);
   });
   lines.push("");
   lines.push(`Subtotal: ${rd(opts.subtotal)}`);
@@ -60,6 +66,18 @@ export function buildOrderMessage(opts: {
     );
   }
   lines.push(`Total: ${rd(opts.total)}`);
+
+  if (opts.delivery === "envio") {
+    lines.push("");
+    lines.push("Entrega: Envío a domicilio");
+    if (opts.address) lines.push(`Dirección: ${opts.address}`);
+  } else if (opts.delivery === "retiro") {
+    lines.push("");
+    lines.push("Entrega: Retiro en el estudio");
+    if (opts.pickupDate)
+      lines.push(`Cita: ${opts.pickupDate}${opts.pickupTime ? ` ${opts.pickupTime}` : ""}`);
+  }
+
   if (opts.trackingCode) {
     lines.push("");
     lines.push(`N.º de pedido: ${opts.trackingCode}`);

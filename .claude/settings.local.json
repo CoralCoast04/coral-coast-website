@@ -13,7 +13,9 @@
       "Bash(gh pr create --base main --head feature/carrito-tracking-panel --title 'Carrito, cupones, tracking, panel admin ampliado y actualizaciones de marca' --body ' *)",
       "Bash(git add *)",
       "Bash(git commit -q -m ' *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(git fetch *)",
+      "Bash(git checkout *)"
     ]
   }
 }

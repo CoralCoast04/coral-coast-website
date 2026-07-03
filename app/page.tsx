@@ -10,7 +10,8 @@ import { Leaf, Scissors, Waves, Truck, Gift, Store } from "lucide-react";
 
 export default async function Home() {
   const [products, content] = await Promise.all([getProducts(), getContent()]);
-  const featured = products.filter((p) => p.featured).slice(0, 3);
+  const featuredList = products.filter((p) => p.featured);
+  const featured = (featuredList.length ? featuredList : products).slice(0, 8);
 
   return (
     <>
@@ -20,6 +21,44 @@ export default async function Home() {
         subtitle={content.hero_subtitle}
         image={content.hero_image}
       />
+
+      {/* Piezas de entrada (mosaico) */}
+      <section className="container-luxe pt-16 md:pt-24 pb-8">
+        <Reveal className="text-center max-w-2xl mx-auto mb-10">
+          <p className="eyebrow text-salvia mb-4">{content.home_featured_eyebrow}</p>
+          <h2 className="text-3xl md:text-5xl text-navy">{content.home_featured_title}</h2>
+          <p className="mt-4 text-navy/60 font-light">{content.home_featured_text}</p>
+        </Reveal>
+
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-10">
+          {featured.map((p, i) => (
+            <Reveal as="article" key={p.id} delay={(i % 4) * 0.06} className="group">
+              <Link href={`/coleccion/${p.slug}`} className="block">
+                <div className="relative overflow-hidden aspect-[4/5] bg-arena/20">
+                  <Image
+                    src={p.image_url}
+                    alt={p.name}
+                    fill
+                    sizes="(max-width:768px) 50vw, 25vw"
+                    className="object-cover transition-transform duration-[1100ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-105"
+                  />
+                  {p.sale_price ? (
+                    <span className="absolute top-2 left-2 bg-terracota text-white text-[0.58rem] tracking-[0.16em] uppercase px-2 py-0.5">Oferta</span>
+                  ) : null}
+                </div>
+                <div className="pt-3">
+                  <h3 className="font-serif text-base md:text-lg text-navy leading-tight">{p.name}</h3>
+                  <span className="text-sm text-terracota">{formatRD(effectivePrice(p))}</span>
+                </div>
+              </Link>
+            </Reveal>
+          ))}
+        </div>
+
+        <Reveal className="text-center mt-12">
+          <Link href="/coleccion" className="btn btn-outline">Ver toda la colección</Link>
+        </Reveal>
+      </section>
 
       {/* Intro editorial */}
       <section className="container-luxe py-24 md:py-32">
@@ -60,43 +99,6 @@ export default async function Home() {
           </p>
         </div>
       </Reveal>
-
-      {/* Destacados */}
-      <section className="container-luxe py-24 md:py-32">
-        <Reveal className="text-center max-w-2xl mx-auto mb-16">
-          <p className="eyebrow text-salvia mb-4">{content.home_featured_eyebrow}</p>
-          <h2 className="text-3xl md:text-5xl text-navy">{content.home_featured_title}</h2>
-          <p className="mt-4 text-navy/60 font-light">{content.home_featured_text}</p>
-        </Reveal>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-12">
-          {featured.map((p, i) => (
-            <Reveal as="article" key={p.id} delay={i * 0.1} className="group">
-              <Link href="/coleccion" className="block">
-                <div className="relative overflow-hidden aspect-[4/5] bg-arena/20">
-                  <Image
-                    src={p.image_url}
-                    alt={p.name}
-                    fill
-                    sizes="(max-width:640px) 100vw, 33vw"
-                    className="object-cover transition-transform duration-[1100ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-105"
-                  />
-                </div>
-                <div className="pt-5 flex items-baseline justify-between">
-                  <h3 className="font-serif text-xl text-navy">{p.name}</h3>
-                  <span className="text-sm text-terracota">{formatRD(effectivePrice(p))}</span>
-                </div>
-              </Link>
-            </Reveal>
-          ))}
-        </div>
-
-        <Reveal className="text-center mt-16">
-          <Link href="/coleccion" className="btn btn-outline">
-            Ver toda la colección
-          </Link>
-        </Reveal>
-      </section>
 
       {/* Valores */}
       <section className="bg-arena/25 py-24 md:py-32">
@@ -146,6 +148,18 @@ export default async function Home() {
             </Reveal>
           ))}
         </div>
+
+        {/* Envoltura de regalo */}
+        <Reveal className="mt-16 grid md:grid-cols-2 gap-8 items-center bg-arena/20 overflow-hidden">
+          <div className="relative aspect-[4/3] md:aspect-auto md:h-full min-h-[260px]">
+            <Image src={content.gift_wrap_image} alt="Envoltura de regalo Coral Coast" fill className="object-cover" sizes="(max-width:768px) 100vw, 50vw" />
+          </div>
+          <div className="p-8 md:p-12">
+            <p className="eyebrow text-salvia mb-3">Detalle</p>
+            <h3 className="font-serif text-2xl md:text-3xl text-navy mb-3">Empaque de regalo</h3>
+            <p className="text-navy/65 font-light leading-relaxed">{content.gift_note}</p>
+          </div>
+        </Reveal>
       </section>
 
       {/* CTA final */}
