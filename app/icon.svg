@@ -1,6 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
-  <rect width="64" height="64" rx="12" fill="#0D2B3E"/>
-  <text x="50%" y="52%" dy="0.02em" text-anchor="middle" dominant-baseline="middle"
-    font-family="Georgia, 'Times New Roman', serif" font-size="30" letter-spacing="-1" fill="#E6C9A8">CC</text>
-  <circle cx="32" cy="49" r="2.4" fill="#D97A5E"/>
+  <g fill="none" stroke="#D97A5E" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round">
+    <!-- tronco -->
+    <path d="M32 60 L32 30" />
+    <!-- rama izquierda -->
+    <path d="M32 46 C 27 42 23 38 21 30 C 20 25 17 23 15 18" />
+    <path d="M21 33 C 17 32 14 31 12 26" />
+    <!-- rama derecha -->
+    <path d="M32 42 C 37 38 41 34 43 26 C 44 21 47 19 49 14" />
+    <path d="M43 29 C 47 28 50 27 52 22" />
+    <!-- ramas centrales -->
+    <path d="M32 34 C 31 28 29 24 27 20 C 26 17 23 16 22 12" />
+    <path d="M32 30 C 33 25 35 21 37 17 C 38 14 41 13 42 10" />
+  </g>
 </svg>
