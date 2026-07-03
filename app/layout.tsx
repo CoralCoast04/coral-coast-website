@@ -25,7 +25,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://www.coralcoastrd.com"),
+  metadataBase: new URL("https://coralcoastrd.com"),
   title: {
     default: "Coral Coast — Casa de diseño dominicana",
     template: "%s · Coral Coast",
@@ -36,7 +36,7 @@ export const metadata: Metadata = {
     title: "Coral Coast — Casa de diseño dominicana",
     description:
       "Moda dominicana en lino y otros tejidos nobles. Por colección o a tu medida, desde nuestro estudio privado.",
-    url: "https://www.coralcoastrd.com",
+    url: "https://coralcoastrd.com",
     siteName: "Coral Coast",
     type: "website",
     locale: "es_DO",

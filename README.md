@@ -1,6 +1,6 @@
 # Coral Coast 🌾
 
-Sitio web de **Coral Coast** ([coralcoastrd.com](https://www.coralcoastrd.com)), estudio dominicano de
+Sitio web de **Coral Coast** ([coralcoastrd.com](https://coralcoastrd.com)), estudio dominicano de
 **sastrería a la medida** en lino y lino-algodón: chacabanas, trajes, bermudas y pantalones.
 Estética _quiet luxury_ minimalista · carrito con cupones · cierre por WhatsApp (sin pago en línea).
 
