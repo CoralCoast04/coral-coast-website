@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { Plus, Check, MessageCircle, ArrowLeft } from "lucide-react";
 import type { Product } from "@/lib/products";
-import { A_LA_MEDIDA } from "@/lib/products";
+import { A_LA_MEDIDA, productMedia } from "@/lib/products";
 import { formatRD } from "@/lib/format";
 import { useCart } from "@/lib/cart/CartContext";
 import { WishlistHeart } from "@/components/WishlistHeart";
@@ -21,6 +21,10 @@ export function ProductDetail({ product }: { product: Product }) {
   const [added, setAdded] = useState(false);
   const onSale = !!product.sale_price && product.sale_price > 0;
 
+  const media = productMedia(product);
+  const [active, setActive] = useState(0);
+  const current = media[active] ?? media[0];
+
   function handleAdd() {
     addItem(product, size);
     setAdded(true);
@@ -29,22 +33,48 @@ export function ProductDetail({ product }: { product: Product }) {
 
   return (
     <div className="grid md:grid-cols-2 gap-10 lg:gap-16 items-start">
-      {/* Imagen */}
-      <div className="relative aspect-[4/5] overflow-hidden bg-arena/20">
-        <Image
-          src={product.image_url}
-          alt={product.name}
-          fill
-          priority
-          sizes="(max-width:768px) 100vw, 50vw"
-          className="object-cover"
-        />
-        {onSale && (
-          <span className="absolute top-4 left-4 bg-terracota text-white text-[0.62rem] tracking-[0.18em] uppercase px-3 py-1">
-            Oferta
-          </span>
+      {/* Galería */}
+      <div className="space-y-3">
+        <div className="relative aspect-[4/5] overflow-hidden bg-arena/20">
+          {current?.type === "video" ? (
+            <video src={current.url} controls playsInline className="h-full w-full object-cover" />
+          ) : (
+            <Image
+              src={current?.url ?? product.image_url}
+              alt={product.name}
+              fill
+              priority
+              sizes="(max-width:768px) 100vw, 50vw"
+              className="object-cover"
+            />
+          )}
+          {onSale && (
+            <span className="absolute top-4 left-4 z-10 bg-terracota text-white text-[0.62rem] tracking-[0.18em] uppercase px-3 py-1">
+              Oferta
+            </span>
+          )}
+          <WishlistHeart productId={product.id} size={20} className="absolute top-4 right-4 z-10 h-10 w-10" />
+        </div>
+
+        {media.length > 1 && (
+          <div className="flex gap-2 flex-wrap">
+            {media.map((m, i) => (
+              <button
+                key={i}
+                onClick={() => setActive(i)}
+                className={`relative h-16 w-14 overflow-hidden bg-arena/20 border transition-colors ${i === active ? "border-navy" : "border-transparent hover:border-navy/30"}`}
+                aria-label={`Ver ${m.type === "video" ? "video" : "foto"} ${i + 1}`}
+              >
+                {m.type === "video" ? (
+                  <video src={m.url} muted className="h-full w-full object-cover" />
+                ) : (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={m.url} alt="" className="h-full w-full object-cover" />
+                )}
+              </button>
+            ))}
+          </div>
         )}
-        <WishlistHeart productId={product.id} size={20} className="absolute top-4 right-4 h-10 w-10" />
       </div>
 
       {/* Info */}

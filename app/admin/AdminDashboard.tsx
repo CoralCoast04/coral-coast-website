@@ -23,6 +23,7 @@ type Product = {
   id: string; slug: string; name: string; category: string; description: string;
   price: number; sale_price: number | null; fabric: string | null; color: string | null;
   image_url: string; featured: boolean; sizes: string[] | null; made_to_measure: boolean;
+  media: { type: "image" | "video"; url: string }[] | null;
 };
 type Coupon = {
   id: string; code: string; discount_type: string; discount_value: number;
@@ -155,6 +156,16 @@ function ProductManager({ products }: { products: Product[] }) {
           </div>
           <input type="hidden" name="id" value={editing?.id ?? ""} />
           <input type="hidden" name="image_url" value={editing?.image_url ?? ""} />
+          <MediaManager
+            key={editing?.id ?? "new"}
+            initial={
+              (editing?.media && editing.media.length
+                ? editing.media
+                : editing?.image_url
+                  ? [{ type: "image" as const, url: editing.image_url }]
+                  : []) as Media[]
+            }
+          />
 
           <div className="grid sm:grid-cols-2 gap-4">
             <div><label className={label}>Nombre *</label><input name="name" required defaultValue={editing?.name} className={field} /></div>
@@ -173,19 +184,6 @@ function ProductManager({ products }: { products: Product[] }) {
             <div className="sm:col-span-2"><label className={label}>Tallas (separadas por coma)</label><input name="sizes" defaultValue={(editing?.sizes ?? []).join(", ")} placeholder="S, M, L, XL   —   deja vacío si es solo a la medida" className={field} /></div>
           </div>
           <div><label className={label}>Descripción</label><textarea name="description" rows={2} defaultValue={editing?.description} className={field} /></div>
-
-          <div className="grid sm:grid-cols-2 gap-4 items-start">
-            <div>
-              <label className={label}>Foto (subir archivo)</label>
-              <input name="image" type="file" accept="image/*" className="text-sm text-navy/70" />
-              <p className="text-[0.68rem] text-navy/40 mt-1">Si no subes archivo, se conserva la imagen actual.</p>
-            </div>
-            {editing?.image_url && (
-              <div className="relative h-24 w-20 overflow-hidden bg-arena/20">
-                <Image src={editing.image_url} alt="" fill className="object-cover" sizes="80px" />
-              </div>
-            )}
-          </div>
 
           <div className="flex flex-wrap gap-6">
             <label className="flex items-center gap-2 text-sm text-navy/70">
@@ -494,6 +492,55 @@ function SubscribersPanel({ subscribers }: { subscribers: Subscriber[] }) {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+/* ---------------------------- Galería producto ------------------------- */
+type Media = { type: "image" | "video"; url: string };
+function MediaManager({ initial }: { initial: Media[] }) {
+  const [media, setMedia] = useState<Media[]>(initial);
+  const [url, setUrl] = useState("");
+
+  function addUrl() {
+    const u = url.trim();
+    if (!u) return;
+    const isVideo = /\.(mp4|webm|mov|m4v)(\?|$)/i.test(u);
+    setMedia((m) => [...m, { type: isVideo ? "video" : "image", url: u }]);
+    setUrl("");
+  }
+  const firstImageIdx = media.findIndex((m) => m.type === "image");
+
+  return (
+    <div>
+      <label className={label}>Galería (fotos y videos)</label>
+      <input type="hidden" name="media_json" value={JSON.stringify(media)} />
+      {media.length > 0 && (
+        <div className="flex flex-wrap gap-3 mb-3">
+          {media.map((m, i) => (
+            <div key={i} className="relative h-24 w-20 overflow-hidden bg-arena/20 border border-navy/10">
+              {m.type === "video" ? (
+                <video src={m.url} className="h-full w-full object-cover" muted />
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={m.url} alt="" className="h-full w-full object-cover" />
+              )}
+              {i === firstImageIdx && (
+                <span className="absolute bottom-0 inset-x-0 bg-navy/70 text-white text-[0.55rem] text-center py-0.5">Portada</span>
+              )}
+              <button type="button" onClick={() => setMedia((arr) => arr.filter((_, idx) => idx !== i))} className="absolute top-1 right-1 bg-white/90 rounded-full p-0.5 text-navy hover:text-terracota">
+                <X size={12} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+      <input type="file" name="media_files" multiple accept="image/*,video/*" className="text-sm text-navy/70 block" />
+      <div className="flex gap-2 mt-2">
+        <input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="…o pega una URL de imagen/video" className={field} />
+        <button type="button" onClick={addUrl} className="text-sm text-navy hover:text-terracota shrink-0 whitespace-nowrap">Añadir URL</button>
+      </div>
+      <p className="text-[0.68rem] text-navy/40 mt-1">La primera imagen es la portada. Puedes subir varias fotos y también videos.</p>
     </div>
   );
 }

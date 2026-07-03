@@ -1,3 +1,5 @@
+export type MediaItem = { type: "image" | "video"; url: string };
+
 export type Product = {
   id: string;
   slug: string;
@@ -8,11 +10,18 @@ export type Product = {
   sale_price: number | null; // precio de oferta en RD$ (null = sin oferta)
   fabric: string; // tejido principal
   color: string;
-  image_url: string;
+  image_url: string; // imagen de portada
+  media?: MediaItem[]; // galería (imágenes y videos)
   featured: boolean;
   sizes: string[]; // tallas disponibles (ej. ["S","M","L"]) — vacío = solo a la medida
   made_to_measure: boolean; // también disponible a la medida
 };
+
+/** Galería efectiva: usa media si existe, si no, la portada como única imagen. */
+export function productMedia(p: Product): MediaItem[] {
+  if (p.media && p.media.length) return p.media;
+  return p.image_url ? [{ type: "image", url: p.image_url }] : [];
+}
 
 /**
  * Colección curada de respaldo (moda a la medida en lino y otros tejidos nobles).

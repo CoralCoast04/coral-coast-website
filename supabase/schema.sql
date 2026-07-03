@@ -343,3 +343,8 @@ alter table public.orders add column if not exists address text;
 alter table public.orders add column if not exists pickup_date date;
 alter table public.orders add column if not exists pickup_time text;
 alter table public.orders add column if not exists has_gift boolean not null default false;
+
+-- =============================================================================
+-- v5 · Galería de producto (varias fotos y videos)
+-- =============================================================================
+alter table public.products add column if not exists media jsonb not null default '[]'::jsonb;
