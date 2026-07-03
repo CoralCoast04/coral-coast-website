@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition, type ChangeEvent } from "react";
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import { CheckCircle2, AlertCircle, Pencil, Trash2, Plus, X } from "lucide-react";
@@ -17,6 +17,7 @@ import {
   type ActionState,
 } from "./manage-actions";
 import { CONTENT_FIELDS, CONTENT_GROUPS } from "@/lib/content-fields";
+import { uploadToStorage } from "@/lib/supabase/client";
 
 /* ------------------------------- Tipos --------------------------------- */
 type Product = {
@@ -431,15 +432,7 @@ function ContentPanel({ content }: { content: Record<string, string> }) {
                       {f.type === "textarea" ? (
                         <textarea name={f.key} rows={3} defaultValue={content[f.key] ?? ""} className={field} />
                       ) : f.type === "image" ? (
-                        <div className="space-y-2">
-                          {content[f.key] && (
-                            <div className="relative h-28 w-44 overflow-hidden bg-arena/20 border border-navy/10">
-                              <Image src={content[f.key]} alt="" fill className="object-cover" sizes="176px" />
-                            </div>
-                          )}
-                          <input type="file" name={`${f.key}__file`} accept="image/*" className="block text-sm text-navy/70" />
-                          <input name={f.key} defaultValue={content[f.key] ?? ""} placeholder="…o pega una URL de imagen" className={field} />
-                        </div>
+                        <ImageField name={f.key} current={content[f.key] ?? ""} />
                       ) : (
                         <input name={f.key} defaultValue={content[f.key] ?? ""} className={field} />
                       )}
@@ -501,6 +494,8 @@ type Media = { type: "image" | "video"; url: string };
 function MediaManager({ initial }: { initial: Media[] }) {
   const [media, setMedia] = useState<Media[]>(initial);
   const [url, setUrl] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
 
   function addUrl() {
     const u = url.trim();
@@ -509,6 +504,26 @@ function MediaManager({ initial }: { initial: Media[] }) {
     setMedia((m) => [...m, { type: isVideo ? "video" : "image", url: u }]);
     setUrl("");
   }
+
+  async function onFiles(e: ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    if (files.length === 0) return;
+    setErr(null);
+    setUploading(true);
+    try {
+      for (const f of files) {
+        const publicUrl = await uploadToStorage(f, "products");
+        const type: "image" | "video" = f.type.startsWith("video") ? "video" : "image";
+        setMedia((m) => [...m, { type, url: publicUrl }]);
+      }
+    } catch (e2) {
+      setErr(e2 instanceof Error ? e2.message : "No se pudo subir el archivo.");
+    } finally {
+      setUploading(false);
+      e.target.value = "";
+    }
+  }
+
   const firstImageIdx = media.findIndex((m) => m.type === "image");
 
   return (
@@ -535,12 +550,49 @@ function MediaManager({ initial }: { initial: Media[] }) {
           ))}
         </div>
       )}
-      <input type="file" name="media_files" multiple accept="image/*,video/*" className="text-sm text-navy/70 block" />
+      <input type="file" multiple accept="image/*,video/*" onChange={onFiles} disabled={uploading} className="text-sm text-navy/70 block disabled:opacity-50" />
+      {uploading && <p className="text-xs text-salvia mt-1">Subiendo…</p>}
+      {err && <p className="text-xs text-terracota mt-1">{err}</p>}
       <div className="flex gap-2 mt-2">
         <input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="…o pega una URL de imagen/video" className={field} />
         <button type="button" onClick={addUrl} className="text-sm text-navy hover:text-terracota shrink-0 whitespace-nowrap">Añadir URL</button>
       </div>
-      <p className="text-[0.68rem] text-navy/40 mt-1">La primera imagen es la portada. Puedes subir varias fotos y también videos.</p>
+      <p className="text-[0.68rem] text-navy/40 mt-1">La primera imagen es la portada. Sube varias fotos y también videos.</p>
+    </div>
+  );
+}
+
+function ImageField({ name, current }: { name: string; current: string }) {
+  const [value, setValue] = useState(current);
+  const [uploading, setUploading] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  async function onFile(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setErr(null);
+    setUploading(true);
+    try {
+      const url = await uploadToStorage(file, "site");
+      setValue(url);
+    } catch (e2) {
+      setErr(e2 instanceof Error ? e2.message : "No se pudo subir la imagen.");
+    } finally {
+      setUploading(false);
+      e.target.value = "";
+    }
+  }
+
+  return (
+    <div className="space-y-2">
+      {value && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={value} alt="" className="h-28 w-44 object-cover bg-arena/20 border border-navy/10" />
+      )}
+      <input type="file" accept="image/*" onChange={onFile} disabled={uploading} className="block text-sm text-navy/70 disabled:opacity-50" />
+      {uploading && <p className="text-xs text-salvia">Subiendo…</p>}
+      {err && <p className="text-xs text-terracota">{err}</p>}
+      <input name={name} value={value} onChange={(e) => setValue(e.target.value)} placeholder="…o pega una URL de imagen" className={field} />
     </div>
   );
 }
