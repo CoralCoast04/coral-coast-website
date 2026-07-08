@@ -48,7 +48,7 @@ const shell = (title: string, body: string) => `
         ${body}
       </div>
       <div style="padding:20px 32px;border-top:1px solid #eee;font-size:12px;color:#7C8F7A">
-        Coral Coast · Santo Domingo, RD · <a href="https://www.coralcoastrd.com" style="color:#D97A5E">coralcoastrd.com</a>
+        Coral Coast · Santo Domingo, RD · <a href="https://coralcoastrd.com" style="color:#D97A5E">coralcoastrd.com</a>
       </div>
     </div>
   </div>`;
@@ -80,7 +80,7 @@ export async function sendOrderConfirmation(o: OrderEmailData): Promise<boolean>
     <div style="background:#F0F4F6;border-radius:6px;padding:16px;margin:20px 0;text-align:center">
       <div style="font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#7C8F7A">Número de pedido</div>
       <div style="font-family:Georgia,serif;font-size:26px;color:#D97A5E;letter-spacing:2px;margin-top:4px">${o.trackingCode}</div>
-      <a href="https://www.coralcoastrd.com/rastrear?codigo=${o.trackingCode}" style="display:inline-block;margin-top:10px;font-size:13px;color:#0D2B3E">Ver estado del pedido →</a>
+      <a href="https://coralcoastrd.com/rastrear?codigo=${o.trackingCode}" style="display:inline-block;margin-top:10px;font-size:13px;color:#0D2B3E">Ver estado del pedido →</a>
     </div>
     <table style="width:100%;border-collapse:collapse;font-size:14px">${rows}
       <tr><td style="padding:10px 0 0">Subtotal</td><td style="padding:10px 0 0;text-align:right">${rd(o.subtotal)}</td></tr>
@@ -147,7 +147,7 @@ export async function sendOrderNotification(o: OrderNotifyData): Promise<boolean
 export async function sendWelcome(to: string): Promise<boolean> {
   const body = `
     <p style="line-height:1.6">¡Gracias por unirte a Coral Coast! Te avisaremos primero sobre nuevas colecciones, piezas limitadas y promociones.</p>
-    <p style="line-height:1.6"><a href="https://www.coralcoastrd.com/coleccion" style="color:#D97A5E">Explorar la colección →</a></p>`;
+    <p style="line-height:1.6"><a href="https://coralcoastrd.com/coleccion" style="color:#D97A5E">Explorar la colección →</a></p>`;
   return sendEmail({
     to,
     subject: "Bienvenido a Coral Coast 🌾",
