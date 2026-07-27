@@ -6,7 +6,7 @@ import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Plus, Check, Search, X } from "lucide-react";
 import type { Product } from "@/lib/products";
-import { A_LA_MEDIDA } from "@/lib/products";
+import { A_LA_MEDIDA, hoverImage } from "@/lib/products";
 import { formatRD } from "@/lib/format";
 import { useCart } from "@/lib/cart/CartContext";
 import { WishlistHeart } from "@/components/WishlistHeart";
@@ -118,13 +118,22 @@ function ProductCard({ p, index }: { p: Product; index: number }) {
       className="group flex flex-col"
     >
       <Link href={`/coleccion/${p.slug}`} className="relative overflow-hidden bg-arena/20 aspect-[4/5] block">
+        {/* Imagen de portada */}
         <Image
           src={p.image_url}
           alt={p.name}
           fill
           sizes="(max-width:768px) 50vw, (max-width:1024px) 33vw, 25vw"
-          className="object-cover transition-transform duration-[1100ms] group-hover:scale-105"
-          style={{ transitionTimingFunction: "cubic-bezier(0.22,1,0.36,1)" }}
+          className="object-cover transition-transform duration-[1100ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-105"
+        />
+        {/* Segunda imagen — se funde al pasar el cursor */}
+        <Image
+          src={hoverImage(p)}
+          alt=""
+          aria-hidden
+          fill
+          sizes="(max-width:768px) 50vw, (max-width:1024px) 33vw, 25vw"
+          className="object-cover opacity-0 transition-[opacity,transform] duration-[1100ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:opacity-100 group-hover:scale-105"
         />
         {onSale && (
           <span className="absolute top-2 left-2 bg-terracota text-white text-[0.58rem] tracking-[0.16em] uppercase px-2 py-0.5">

@@ -24,6 +24,18 @@ export function productMedia(p: Product): MediaItem[] {
 }
 
 /**
+ * Segunda imagen para el efecto de hover en las tarjetas. Usa la primera
+ * imagen de la galería distinta a la portada; si no hay, devuelve la misma
+ * portada (placeholder — el hover se ve idéntico hasta cargar la foto real).
+ */
+export function hoverImage(p: Product): string {
+  const alt = productMedia(p).find(
+    (m) => m.type === "image" && m.url !== p.image_url
+  );
+  return alt?.url ?? p.image_url;
+}
+
+/**
  * Colección curada de respaldo (moda a la medida en lino y otros tejidos nobles).
  * Se usa mientras Supabase no esté configurado; luego `getProducts()` lee de
  * la tabla `products`. Las fotos son de referencia — reemplázalas por las tuyas.
