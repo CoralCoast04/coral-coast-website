@@ -6,10 +6,11 @@ import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Plus, Check, Search, X } from "lucide-react";
 import type { Product } from "@/lib/products";
-import { A_LA_MEDIDA } from "@/lib/products";
+import { A_LA_MEDIDA, hoverImage, canAddSize, tracksStock, sizeStock, isSoldOut, LOW_STOCK } from "@/lib/products";
 import { formatRD } from "@/lib/format";
 import { useCart } from "@/lib/cart/CartContext";
 import { WishlistHeart } from "@/components/WishlistHeart";
+import { waLink, WA_MESSAGES } from "@/lib/whatsapp";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -98,11 +99,19 @@ export function ProductGrid({ products }: { products: Product[] }) {
 function ProductCard({ p, index }: { p: Product; index: number }) {
   const { addItem } = useCart();
   const options = [...(p.sizes ?? []), ...(p.made_to_measure ? [A_LA_MEDIDA] : [])];
-  const [size, setSize] = useState(options[0] ?? A_LA_MEDIDA);
+  const [size, setSize] = useState(
+    options.find((o) => canAddSize(p, o)) ?? options[0] ?? A_LA_MEDIDA
+  );
   const [added, setAdded] = useState(false);
   const onSale = !!p.sale_price && p.sale_price > 0;
 
+  const tracks = tracksStock(p);
+  const soldOut = isSoldOut(p);
+  const canAdd = canAddSize(p, size);
+  const selStock = size === A_LA_MEDIDA ? null : sizeStock(p, size);
+
   function handleAdd() {
+    if (!canAdd) return;
     addItem(p, size);
     setAdded(true);
     setTimeout(() => setAdded(false), 1200);
@@ -118,17 +127,31 @@ function ProductCard({ p, index }: { p: Product; index: number }) {
       className="group flex flex-col"
     >
       <Link href={`/coleccion/${p.slug}`} className="relative overflow-hidden bg-arena/20 aspect-[4/5] block">
+        {/* Imagen de portada */}
         <Image
           src={p.image_url}
           alt={p.name}
           fill
           sizes="(max-width:768px) 50vw, (max-width:1024px) 33vw, 25vw"
-          className="object-cover transition-transform duration-[1100ms] group-hover:scale-105"
-          style={{ transitionTimingFunction: "cubic-bezier(0.22,1,0.36,1)" }}
+          className="object-cover transition-transform duration-[1100ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-105"
+        />
+        {/* Segunda imagen — se funde al pasar el cursor */}
+        <Image
+          src={hoverImage(p)}
+          alt=""
+          aria-hidden
+          fill
+          sizes="(max-width:768px) 50vw, (max-width:1024px) 33vw, 25vw"
+          className="object-cover opacity-0 transition-[opacity,transform] duration-[1100ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:opacity-100 group-hover:scale-105"
         />
         {onSale && (
           <span className="absolute top-2 left-2 bg-terracota text-white text-[0.58rem] tracking-[0.16em] uppercase px-2 py-0.5">
             Oferta
+          </span>
+        )}
+        {soldOut && (
+          <span className="absolute top-2 left-2 bg-navy/80 text-white text-[0.58rem] tracking-[0.16em] uppercase px-2 py-0.5" style={onSale ? { top: "1.9rem" } : undefined}>
+            Agotado
           </span>
         )}
         <WishlistHeart productId={p.id} size={15} className="absolute top-2 right-2 h-7 w-7" />
@@ -153,33 +176,58 @@ function ProductCard({ p, index }: { p: Product; index: number }) {
 
         {options.length > 1 && (
           <div className="mt-2.5 flex flex-wrap gap-1.5">
-            {options.map((opt) => (
-              <button
-                key={opt}
-                onClick={() => setSize(opt)}
-                className={`px-2 py-0.5 text-[0.66rem] tracking-wide border rounded-full transition-colors duration-300 ${
-                  size === opt
-                    ? "bg-navy text-white border-navy"
-                    : "border-navy/20 text-navy/70 hover:border-navy/50"
-                }`}
-              >
-                {opt}
-              </button>
-            ))}
+            {options.map((opt) => {
+              const available = canAddSize(p, opt);
+              return (
+                <button
+                  key={opt}
+                  onClick={() => available && setSize(opt)}
+                  disabled={!available}
+                  title={!available ? "Agotada" : undefined}
+                  className={`px-2 py-0.5 text-[0.66rem] tracking-wide border rounded-full transition-colors duration-300 ${
+                    size === opt
+                      ? "bg-navy text-white border-navy"
+                      : !available
+                        ? "border-navy/10 text-navy/30 line-through cursor-not-allowed"
+                        : "border-navy/20 text-navy/70 hover:border-navy/50"
+                  }`}
+                >
+                  {opt}
+                </button>
+              );
+            })}
           </div>
         )}
 
-        <button onClick={handleAdd} className="btn !py-2.5 !text-[0.7rem] w-full mt-3">
-          {added ? (
-            <>
-              <Check size={14} /> Agregado
-            </>
-          ) : (
-            <>
-              <Plus size={14} /> Agregar
-            </>
-          )}
-        </button>
+        {/* Aviso de stock de la talla elegida */}
+        {tracks && size !== A_LA_MEDIDA && selStock !== null && selStock <= LOW_STOCK && (
+          <p className="mt-2 text-[0.7rem] text-terracota">
+            {selStock === 0 ? "Agotada en esta talla" : `¡Últimas ${selStock}!`}
+          </p>
+        )}
+
+        {canAdd ? (
+          <button onClick={handleAdd} className="btn !py-2.5 !text-[0.7rem] w-full mt-3">
+            {added ? (
+              <>
+                <Check size={14} /> Agregado
+              </>
+            ) : (
+              <>
+                <Plus size={14} /> Agregar
+              </>
+            )}
+          </button>
+        ) : (
+          <a
+            href={waLink(WA_MESSAGES.stock(p.name, size === A_LA_MEDIDA ? undefined : size))}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn btn-outline !py-2.5 !text-[0.7rem] w-full mt-3"
+          >
+            Consultar producción
+          </a>
+        )}
       </div>
     </motion.li>
   );

@@ -3,6 +3,7 @@ import Image from "next/image";
 import { Hero } from "@/components/Hero";
 import { Reveal } from "@/components/Reveal";
 import { getProducts } from "@/lib/products.server";
+import { hoverImage } from "@/lib/products";
 import { getContent } from "@/lib/content";
 import { formatRD, effectivePrice } from "@/lib/format";
 import { waLink, WA_MESSAGES } from "@/lib/whatsapp";
@@ -41,6 +42,14 @@ export default async function Home() {
                     fill
                     sizes="(max-width:768px) 50vw, 25vw"
                     className="object-cover transition-transform duration-[1100ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-105"
+                  />
+                  <Image
+                    src={hoverImage(p)}
+                    alt=""
+                    aria-hidden
+                    fill
+                    sizes="(max-width:768px) 50vw, 25vw"
+                    className="object-cover opacity-0 transition-[opacity,transform] duration-[1100ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:opacity-100 group-hover:scale-105"
                   />
                   {p.sale_price ? (
                     <span className="absolute top-2 left-2 bg-terracota text-white text-[0.58rem] tracking-[0.16em] uppercase px-2 py-0.5">Oferta</span>

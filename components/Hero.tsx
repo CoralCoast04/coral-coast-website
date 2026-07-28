@@ -1,7 +1,8 @@
 "use client";
 
+import { useRef } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { motion, useScroll, useTransform, useReducedMotion } from "framer-motion";
 import { waLink, WA_MESSAGES } from "@/lib/whatsapp";
 
 const POSTER =
@@ -23,26 +24,49 @@ export function Hero({
   image?: string;
 }) {
   const ease = [0.22, 1, 0.36, 1] as const;
+  const reduce = useReducedMotion();
+
+  const ref = useRef<HTMLElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start start", "end start"],
+  });
+
+  // Parallax sutil: el fondo cae despacio, el contenido sube y se desvanece.
+  const bgY = useTransform(scrollYProgress, [0, 1], ["0%", reduce ? "0%" : "16%"]);
+  const contentY = useTransform(scrollYProgress, [0, 1], ["0%", reduce ? "0%" : "40%"]);
+  const contentOpacity = useTransform(scrollYProgress, [0, 0.75], [1, reduce ? 1 : 0]);
 
   return (
-    <section className="relative h-[100svh] min-h-[600px] w-full overflow-hidden">
-      {/* Video de fondo */}
-      <video
-        className="absolute inset-0 h-full w-full object-cover"
-        autoPlay
-        muted
-        loop
-        playsInline
-        poster={image}
+    <section
+      ref={ref}
+      className="relative h-[100svh] min-h-[600px] w-full overflow-hidden"
+    >
+      {/* Fondo con parallax (escalado para que el desplazamiento no revele bordes) */}
+      <motion.div
+        className="absolute inset-0 will-change-transform"
+        style={{ y: bgY, scale: 1.12 }}
       >
-        <source src="/hero.mp4" type="video/mp4" />
-      </video>
+        <video
+          className="absolute inset-0 h-full w-full object-cover"
+          autoPlay
+          muted
+          loop
+          playsInline
+          poster={image}
+        >
+          <source src="/hero.mp4" type="video/mp4" />
+        </video>
 
-      {/* Velo para legibilidad (más oscuro arriba para la navbar) */}
-      <div className="absolute inset-0 bg-gradient-to-b from-navy/65 via-navy/35 to-navy/75" />
+        {/* Velo para legibilidad (más oscuro arriba para la navbar) */}
+        <div className="absolute inset-0 bg-gradient-to-b from-navy/65 via-navy/35 to-navy/75" />
+      </motion.div>
 
       {/* Contenido */}
-      <div className="container-luxe relative z-10 flex h-full flex-col items-start justify-center text-white">
+      <motion.div
+        style={{ y: contentY, opacity: contentOpacity }}
+        className="container-luxe relative z-10 flex h-full flex-col items-start justify-center text-white"
+      >
         <motion.p
           className="eyebrow text-arena mb-5"
           initial={{ opacity: 0, y: 20 }}
@@ -88,7 +112,7 @@ export function Hero({
             Agenda por WhatsApp
           </a>
         </motion.div>
-      </div>
+      </motion.div>
 
       {/* Indicador de scroll */}
       <motion.div

@@ -18,6 +18,8 @@ export const WA_MESSAGES = {
     "Hola Coral Coast 🌾 Quisiera agendar una cita para conocer la colección.",
   pieza: (nombre: string) =>
     `Hola Coral Coast 🌾 Me interesa la pieza "${nombre}". ¿Me cuentan más?`,
+  stock: (nombre: string, talla?: string) =>
+    `Hola Coral Coast 🌾 Me interesa "${nombre}"${talla ? ` en talla ${talla}` : ""}. Vi que está agotada — ¿cuándo vuelve o puedo encargarla para la próxima producción?`,
 };
 
 type OrderLine = {
@@ -40,6 +42,8 @@ export function buildOrderMessage(opts: {
   discount: number;
   total: number;
   couponCode?: string | null;
+  shipping?: number;
+  province?: string | null;
   name?: string | null;
   phone?: string | null;
   trackingCode?: string | null;
@@ -63,6 +67,13 @@ export function buildOrderMessage(opts: {
       `Descuento${opts.couponCode ? ` (${opts.couponCode})` : ""}: -${rd(
         opts.discount
       )}`
+    );
+  }
+  if (opts.delivery === "envio" && opts.shipping !== undefined) {
+    lines.push(
+      `Envío${opts.province ? ` (${opts.province})` : ""}: ${
+        opts.shipping > 0 ? rd(opts.shipping) : "Gratis"
+      }`
     );
   }
   lines.push(`Total: ${rd(opts.total)}`);

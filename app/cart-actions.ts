@@ -94,6 +94,8 @@ export type OrderPayload = {
   items: OrderItem[];
   subtotal: number;
   discount: number;
+  shipping: number;
+  province: string | null;
   total: number;
   coupon_code: string | null;
   customer_name: string | null;
@@ -125,6 +127,7 @@ export async function createOrder(
         items: payload.items,
         subtotal: payload.subtotal,
         discount: payload.discount,
+        shipping: payload.shipping,
         total: payload.total,
         couponCode: payload.coupon_code,
       });
@@ -139,6 +142,8 @@ export async function createOrder(
       total: payload.total,
       deliveryMethod: payload.delivery_method,
       address: payload.address,
+      province: payload.province,
+      shipping: payload.shipping,
       pickupDate: payload.pickup_date,
       pickupTime: payload.pickup_time,
       hasGift: has_gift,
@@ -158,6 +163,8 @@ export async function createOrder(
         items: payload.items,
         subtotal: payload.subtotal,
         discount: payload.discount,
+        shipping: payload.shipping,
+        province: payload.province,
         total: payload.total,
         coupon_code: payload.coupon_code,
         customer_name: payload.customer_name,

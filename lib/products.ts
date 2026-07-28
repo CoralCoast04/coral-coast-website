@@ -15,12 +15,62 @@ export type Product = {
   featured: boolean;
   sizes: string[]; // tallas disponibles (ej. ["S","M","L"]) — vacío = solo a la medida
   made_to_measure: boolean; // también disponible a la medida
+  stock?: Record<string, number>; // inventario por talla, ej. { S: 3, M: 0, L: 5 }
 };
+
+/** Umbral de "quedan pocas": a este número o menos se muestra el aviso al público. */
+export const LOW_STOCK = 3;
+
+/** Unidades en stock de una talla (0 si no hay). */
+export function sizeStock(p: Product, size: string): number {
+  const s = p.stock?.[size];
+  return typeof s === "number" && s > 0 ? s : 0;
+}
+
+/** ¿Este producto lleva control de inventario? (alguna talla con cantidad definida) */
+export function tracksStock(p: Product): boolean {
+  return !!p.stock && Object.keys(p.stock).length > 0;
+}
+
+/** Total de unidades físicas en todas las tallas. */
+export function totalStock(p: Product): number {
+  if (!p.stock) return 0;
+  return Object.values(p.stock).reduce((a, b) => a + (b > 0 ? b : 0), 0);
+}
+
+/** Agotado: lleva inventario y no queda ninguna unidad física. */
+export function isSoldOut(p: Product): boolean {
+  return tracksStock(p) && totalStock(p) === 0;
+}
+
+/**
+ * ¿Se puede agregar esta talla al carrito?
+ * - Si el producto no lleva inventario, siempre sí (comportamiento previo).
+ * - "A la medida" siempre se puede (se fabrica a pedido).
+ * - Con inventario, solo si esa talla tiene unidades.
+ */
+export function canAddSize(p: Product, size: string): boolean {
+  if (size === A_LA_MEDIDA) return true;
+  if (!tracksStock(p)) return true;
+  return sizeStock(p, size) > 0;
+}
 
 /** Galería efectiva: usa media si existe, si no, la portada como única imagen. */
 export function productMedia(p: Product): MediaItem[] {
   if (p.media && p.media.length) return p.media;
   return p.image_url ? [{ type: "image", url: p.image_url }] : [];
+}
+
+/**
+ * Segunda imagen para el efecto de hover en las tarjetas. Usa la primera
+ * imagen de la galería distinta a la portada; si no hay, devuelve la misma
+ * portada (placeholder — el hover se ve idéntico hasta cargar la foto real).
+ */
+export function hoverImage(p: Product): string {
+  const alt = productMedia(p).find(
+    (m) => m.type === "image" && m.url !== p.image_url
+  );
+  return alt?.url ?? p.image_url;
 }
 
 /**
