@@ -60,6 +60,7 @@ export type OrderEmailData = {
   items: { name: string; qty: number; unit_price: number; size?: string }[];
   subtotal: number;
   discount: number;
+  shipping?: number;
   total: number;
   couponCode?: string | null;
 };
@@ -85,6 +86,7 @@ export async function sendOrderConfirmation(o: OrderEmailData): Promise<boolean>
     <table style="width:100%;border-collapse:collapse;font-size:14px">${rows}
       <tr><td style="padding:10px 0 0">Subtotal</td><td style="padding:10px 0 0;text-align:right">${rd(o.subtotal)}</td></tr>
       ${o.discount > 0 ? `<tr><td style="color:#7C8F7A">Descuento${o.couponCode ? ` (${o.couponCode})` : ""}</td><td style="color:#7C8F7A;text-align:right">−${rd(o.discount)}</td></tr>` : ""}
+      ${o.shipping !== undefined ? `<tr><td>Envío</td><td style="text-align:right">${o.shipping > 0 ? rd(o.shipping) : "Gratis"}</td></tr>` : ""}
       <tr><td style="padding-top:6px;font-weight:600">Total</td><td style="padding-top:6px;text-align:right;font-weight:600">${rd(o.total)}</td></tr>
     </table>`;
 
@@ -106,6 +108,8 @@ export type OrderNotifyData = {
   total: number;
   deliveryMethod?: "envio" | "retiro" | null;
   address?: string | null;
+  province?: string | null;
+  shipping?: number;
   pickupDate?: string | null;
   pickupTime?: string | null;
   hasGift: boolean;
@@ -121,7 +125,7 @@ export async function sendOrderNotification(o: OrderNotifyData): Promise<boolean
     o.deliveryMethod === "retiro"
       ? `<p><strong>Retiro en el estudio</strong>${o.pickupDate ? ` — cita: ${o.pickupDate}${o.pickupTime ? " " + o.pickupTime : ""}` : ""}</p>`
       : o.deliveryMethod === "envio"
-        ? `<p><strong>Envío a domicilio</strong>${o.address ? `<br>${o.address}` : ""}</p>`
+        ? `<p><strong>Envío a domicilio</strong>${o.province ? ` — ${o.province}` : ""}${o.shipping !== undefined ? ` (${o.shipping > 0 ? rd(o.shipping) : "Gratis"})` : ""}${o.address ? `<br>${o.address}` : ""}</p>`
         : "";
 
   const body = `

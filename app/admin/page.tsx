@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/server";
 import { getContent } from "@/lib/content";
+import { getShippingRates } from "@/lib/shipping.server";
 import { LoginForm } from "./LoginForm";
 import { AdminDashboard } from "./AdminDashboard";
 import { signOut } from "./actions";
@@ -62,7 +63,7 @@ export default async function AdminPage() {
     );
   }
 
-  const [products, coupons, orders, appointments, messages, subscribers, content] =
+  const [products, coupons, orders, appointments, messages, subscribers, content, shippingRates] =
     await Promise.all([
       supabase.from("products").select("*").order("featured", { ascending: false }).order("name"),
       supabase.from("coupons").select("*").order("created_at", { ascending: false }),
@@ -71,6 +72,7 @@ export default async function AdminPage() {
       supabase.from("messages").select("*").order("created_at", { ascending: false }),
       supabase.from("subscribers").select("*").order("created_at", { ascending: false }),
       getContent(),
+      getShippingRates(),
     ]);
 
   return (
@@ -84,6 +86,8 @@ export default async function AdminPage() {
         messages={messages.data ?? []}
         subscribers={subscribers.data ?? []}
         content={content}
+        shippingRates={shippingRates}
+        freeShippingThreshold={Number(content.free_shipping_threshold) || 0}
       />
     </Shell>
   );

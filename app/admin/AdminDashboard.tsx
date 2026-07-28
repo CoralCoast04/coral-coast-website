@@ -14,9 +14,12 @@ import {
   deleteCoupon,
   updateOrderStatus,
   saveContent,
+  saveShipping,
+  saveStock,
   type ActionState,
 } from "./manage-actions";
 import { CONTENT_FIELDS, CONTENT_GROUPS } from "@/lib/content-fields";
+import { DR_PROVINCES, type ShippingRate } from "@/lib/shipping";
 import { uploadToStorage } from "@/lib/supabase/client";
 
 /* ------------------------------- Tipos --------------------------------- */
@@ -25,6 +28,7 @@ type Product = {
   price: number; sale_price: number | null; fabric: string | null; color: string | null;
   image_url: string; featured: boolean; sizes: string[] | null; made_to_measure: boolean;
   media: { type: "image" | "video"; url: string }[] | null;
+  stock: Record<string, number> | null;
 };
 type Coupon = {
   id: string; code: string; discount_type: string; discount_value: number;
@@ -71,7 +75,7 @@ function SubmitBtn({ label }: { label: string }) {
   return <button type="submit" disabled={pending} className="btn disabled:opacity-60">{pending ? "Guardando…" : label}</button>;
 }
 
-const TABS = ["Productos", "Cupones", "Órdenes", "Contenido", "Suscriptores", "Citas", "Mensajes"] as const;
+const TABS = ["Productos", "Almacén", "Cupones", "Envíos", "Órdenes", "Contenido", "Suscriptores", "Citas", "Mensajes"] as const;
 
 export function AdminDashboard(props: {
   email: string;
@@ -82,6 +86,8 @@ export function AdminDashboard(props: {
   messages: Message[];
   subscribers: Subscriber[];
   content: Record<string, string>;
+  shippingRates: ShippingRate[];
+  freeShippingThreshold: number;
 }) {
   const [tab, setTab] = useState<(typeof TABS)[number]>("Productos");
 
@@ -103,6 +109,8 @@ export function AdminDashboard(props: {
         {TABS.map((t) => {
           const counts: Record<string, number> = {
             Productos: props.products.length, Cupones: props.coupons.length,
+            Almacén: props.products.length,
+            Envíos: props.shippingRates.filter((r) => r.cost > 0).length,
             Órdenes: props.orders.length, Contenido: CONTENT_FIELDS.length,
             Suscriptores: props.subscribers.length,
             Citas: props.appointments.length, Mensajes: props.messages.length,
@@ -117,7 +125,9 @@ export function AdminDashboard(props: {
       </div>
 
       {tab === "Productos" && <ProductManager products={props.products} />}
+      {tab === "Almacén" && <StockPanel products={props.products} />}
       {tab === "Cupones" && <CouponManager coupons={props.coupons} />}
+      {tab === "Envíos" && <ShippingPanel rates={props.shippingRates} threshold={props.freeShippingThreshold} />}
       {tab === "Órdenes" && <OrdersPanel orders={props.orders} />}
       {tab === "Contenido" && <ContentPanel content={props.content} />}
       {tab === "Suscriptores" && <SubscribersPanel subscribers={props.subscribers} />}
@@ -393,6 +403,123 @@ function MessagesPanel({ messages }: { messages: Message[] }) {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+/* =============================== ALMACÉN ============================== */
+function StockPanel({ products }: { products: Product[] }) {
+  const [state, action] = useActionState(saveStock, null);
+  const withSizes = products.filter((p) => (p.sizes?.length ?? 0) > 0);
+  const onlyMadeToMeasure = products.filter((p) => (p.sizes?.length ?? 0) === 0);
+
+  return (
+    <div>
+      <h2 className="font-serif text-2xl text-navy mb-2">Almacén · Inventario</h2>
+      <p className="text-sm text-navy/50 mb-6 max-w-2xl">
+        Ajusta cuántas unidades te quedan de cada talla. El público verá “¡Últimas 3!”
+        cuando queden pocas y “Agotado — consultar” cuando no haya (podrá escribirte para
+        próxima producción). Un solo botón guarda todo.
+      </p>
+
+      <form action={action} className="space-y-4 max-w-3xl">
+        {withSizes.length === 0 && (
+          <p className="text-sm text-navy/50">No hay productos con tallas. Agrega tallas a un producto en la pestaña “Productos”.</p>
+        )}
+        {withSizes.map((p) => {
+          const total = (p.sizes ?? []).reduce((s, sz) => s + Math.max(0, p.stock?.[sz] ?? 0), 0);
+          return (
+            <div key={p.id} className="border border-navy/10 bg-white/40 p-4 flex flex-col sm:flex-row gap-4 sm:items-center">
+              <div className="flex items-center gap-3 sm:w-64 shrink-0">
+                <div className="relative h-16 w-14 shrink-0 overflow-hidden bg-arena/20">
+                  <Image src={p.image_url} alt={p.name} fill className="object-cover" sizes="56px" />
+                </div>
+                <div className="min-w-0">
+                  <h3 className="font-serif text-lg text-navy leading-tight truncate">{p.name}</h3>
+                  <p className="text-xs text-navy/50">{p.fabric || p.category}</p>
+                  <p className="text-[0.7rem] text-salvia mt-0.5">{total} en stock{p.made_to_measure ? " · + a la medida" : ""}</p>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                {(p.sizes ?? []).map((size) => (
+                  <label key={size} className="flex flex-col items-center gap-1">
+                    <span className="text-[0.7rem] tracking-wide text-navy/60">{size}</span>
+                    <input
+                      name={`stock__${p.id}__${size}`}
+                      type="number"
+                      min="0"
+                      defaultValue={p.stock?.[size] ?? 0}
+                      className="w-16 bg-transparent border border-navy/20 rounded px-2 py-1.5 text-sm text-navy text-center focus:border-terracota focus:outline-none"
+                    />
+                  </label>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+
+        {onlyMadeToMeasure.length > 0 && (
+          <div className="border border-navy/10 bg-arena/10 p-4">
+            <p className="text-[0.72rem] tracking-[0.16em] uppercase text-navy/50 mb-2">Solo a la medida (sin stock físico)</p>
+            <p className="text-sm text-navy/60">{onlyMadeToMeasure.map((p) => p.name).join(" · ")}</p>
+          </div>
+        )}
+
+        {withSizes.length > 0 && (
+          <div className="pt-1">
+            <Feedback state={state} />
+            <div className="mt-3"><SubmitBtn label="Guardar inventario" /></div>
+          </div>
+        )}
+      </form>
+    </div>
+  );
+}
+
+/* =============================== ENVÍOS =============================== */
+function ShippingPanel({ rates, threshold }: { rates: ShippingRate[]; threshold: number }) {
+  const [state, action] = useActionState(saveShipping, null);
+  const rateMap = new Map(rates.map((r) => [r.province, r]));
+
+  return (
+    <div>
+      <h2 className="font-serif text-2xl text-navy mb-2">Costos de envío</h2>
+      <p className="text-sm text-navy/50 mb-6 max-w-2xl">
+        Define el costo de envío por provincia. En el carrito, el cliente elige su
+        provincia y ve el costo en su resumen. Desmarca “Ofrecer” para no enviar a
+        una provincia. Un solo botón guarda todo.
+      </p>
+
+      <form action={action} className="max-w-2xl space-y-6">
+        {/* Envío gratis */}
+        <div className="bg-white/50 border border-navy/10 p-5">
+          <label className={label}>Envío gratis a partir de (RD$) — deja 0 para desactivar</label>
+          <input name="free_shipping_threshold" type="number" min="0" defaultValue={threshold || 0} className={`${field} max-w-xs`} />
+          <p className="text-[0.7rem] text-navy/40 mt-1">Si el subtotal del cliente alcanza este monto, el envío se muestra como “Gratis”.</p>
+        </div>
+
+        {/* Provincias */}
+        <div className="border border-navy/10 bg-white/40 divide-y divide-navy/10">
+          {DR_PROVINCES.map((prov) => {
+            const r = rateMap.get(prov);
+            return (
+              <div key={prov} className="flex items-center gap-3 p-3">
+                <span className="flex-1 text-sm text-navy">{prov}</span>
+                <label className="flex items-center gap-1.5 text-xs text-navy/60 shrink-0">
+                  <input type="checkbox" name={`active__${prov}`} defaultChecked={r ? r.active : true} /> Ofrecer
+                </label>
+                <div className="flex items-center gap-1 shrink-0">
+                  <span className="text-xs text-navy/40">RD$</span>
+                  <input name={`cost__${prov}`} type="number" min="0" defaultValue={r?.cost ?? 0} className={`${field} w-24`} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <Feedback state={state} />
+        <SubmitBtn label="Guardar costos de envío" />
+      </form>
     </div>
   );
 }

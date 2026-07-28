@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/server";
 import { CONTENT_FIELDS } from "@/lib/content";
+import { DR_PROVINCES } from "@/lib/shipping";
 
 export type ActionState = { ok: boolean; message: string } | null;
 
@@ -172,6 +173,78 @@ export async function updateOrderStatus(
   const supabase = await requireAdmin();
   await supabase.from("orders").update({ status }).eq("id", id);
   revalidatePath("/admin");
+}
+
+/* ------------------------------- ENVÍOS -------------------------------- */
+export async function saveShipping(
+  _prev: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  try {
+    const supabase = await requireAdmin();
+
+    // Tarifa por provincia
+    const rows = DR_PROVINCES.map((province) => ({
+      province,
+      cost: num(formData.get(`cost__${province}`)),
+      active: formData.get(`active__${province}`) === "on",
+      updated_at: new Date().toISOString(),
+    }));
+    const { error } = await supabase
+      .from("shipping_rates")
+      .upsert(rows, { onConflict: "province" });
+    if (error) throw error;
+
+    // Umbral de envío gratis (0 = desactivado) en site_content
+    const threshold = num(formData.get("free_shipping_threshold"));
+    const { error: e2 } = await supabase.from("site_content").upsert(
+      {
+        key: "free_shipping_threshold",
+        value: String(threshold),
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "key" }
+    );
+    if (e2) throw e2;
+
+    revalidatePath("/", "layout");
+    return { ok: true, message: "Costos de envío actualizados." };
+  } catch (e) {
+    return { ok: false, message: e instanceof Error ? e.message : "Error al guardar." };
+  }
+}
+
+/* ------------------------------ ALMACÉN -------------------------------- */
+export async function saveStock(
+  _prev: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  try {
+    const supabase = await requireAdmin();
+
+    // Agrupa los campos stock__{id}__{talla} por producto.
+    const byProduct = new Map<string, Record<string, number>>();
+    for (const [key, val] of formData.entries()) {
+      const m = key.match(/^stock__(.+?)__(.+)$/);
+      if (!m) continue;
+      const [, id, size] = m;
+      const qty = Math.max(0, Math.floor(num(val)));
+      if (!byProduct.has(id)) byProduct.set(id, {});
+      byProduct.get(id)![size] = qty;
+    }
+
+    for (const [id, stock] of byProduct) {
+      const { error } = await supabase.from("products").update({ stock }).eq("id", id);
+      if (error) throw error;
+    }
+
+    revalidatePath("/admin");
+    revalidatePath("/coleccion");
+    revalidatePath("/");
+    return { ok: true, message: "Inventario actualizado." };
+  } catch (e) {
+    return { ok: false, message: e instanceof Error ? e.message : "Error al guardar." };
+  }
 }
 
 /* ------------------------------ CONTENIDO ------------------------------ */
