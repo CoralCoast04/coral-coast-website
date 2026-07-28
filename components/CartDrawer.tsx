@@ -8,6 +8,7 @@ import { useCart } from "@/lib/cart/CartContext";
 import { effectivePrice, formatRD } from "@/lib/format";
 import { validateCoupon, createOrder } from "@/app/cart-actions";
 import { waLink, buildOrderMessage } from "@/lib/whatsapp";
+import { DR_PROVINCES, quoteShipping, type ShippingRate } from "@/lib/shipping";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 const TIME_SLOTS = ["10:00", "11:00", "12:00", "14:00", "15:00", "16:00", "17:00"];
@@ -17,9 +18,14 @@ type Props = {
   giftNote?: string;
   studioAddress?: string;
   studioHours?: string;
+  shippingRates?: ShippingRate[];
+  freeShippingThreshold?: number;
 };
 
-export function CartDrawer({ giftWrapImage, giftNote, studioAddress, studioHours }: Props) {
+export function CartDrawer({
+  giftWrapImage, giftNote, studioAddress, studioHours,
+  shippingRates = [], freeShippingThreshold = 0,
+}: Props) {
   const {
     items, isOpen, closeCart, setQty, removeItem, toggleGift, clear,
     coupon, applyCoupon, removeCoupon, subtotal, discount, total,
@@ -33,6 +39,7 @@ export function CartDrawer({ giftWrapImage, giftNote, studioAddress, studioHours
   const [email, setEmail] = useState("");
   const [delivery, setDelivery] = useState<"envio" | "retiro">("envio");
   const [address, setAddress] = useState("");
+  const [province, setProvince] = useState("");
   const [pickupDate, setPickupDate] = useState("");
   const [pickupTime, setPickupTime] = useState("");
   const [sending, setSending] = useState(false);
@@ -40,6 +47,23 @@ export function CartDrawer({ giftWrapImage, giftNote, studioAddress, studioHours
 
   const giftCount = items.filter((i) => i.gift).length;
   const today = new Date().toISOString().slice(0, 10);
+
+  // Envío por provincia
+  const activeRates = shippingRates.filter((r) => r.active);
+  const rateMap = new Map(activeRates.map((r) => [r.province, r]));
+  const provinceOptions = DR_PROVINCES.filter((p) => rateMap.has(p));
+  const offersShipping = delivery === "envio" && provinceOptions.length > 0;
+  const quote = quoteShipping(
+    province ? rateMap.get(province) : null,
+    subtotal,
+    freeShippingThreshold
+  );
+  const shippingCost = offersShipping && quote.known ? quote.cost : 0;
+  const grandTotal = total + shippingCost;
+  const missingForFree =
+    freeShippingThreshold > 0 && subtotal < freeShippingThreshold
+      ? freeShippingThreshold - subtotal
+      : 0;
 
   async function handleApplyCoupon() {
     if (!code.trim()) return;
@@ -63,6 +87,10 @@ export function CartDrawer({ giftWrapImage, giftNote, studioAddress, studioHours
       setError("Elige fecha y hora para tu retiro en el estudio.");
       return;
     }
+    if (offersShipping && !province) {
+      setError("Elige tu provincia para calcular el envío.");
+      return;
+    }
     setSending(true);
 
     const orderItems = items.map((i) => ({
@@ -71,7 +99,10 @@ export function CartDrawer({ giftWrapImage, giftNote, studioAddress, studioHours
 
     const res = await createOrder({
       items: orderItems,
-      subtotal, discount, total,
+      subtotal, discount,
+      shipping: delivery === "envio" ? shippingCost : 0,
+      province: delivery === "envio" ? province || null : null,
+      total: grandTotal,
       coupon_code: coupon?.code ?? null,
       customer_name: name.trim() || null,
       customer_phone: phone.trim() || null,
@@ -84,7 +115,10 @@ export function CartDrawer({ giftWrapImage, giftNote, studioAddress, studioHours
 
     const message = buildOrderMessage({
       items: orderItems,
-      subtotal, discount, total,
+      subtotal, discount,
+      shipping: delivery === "envio" ? shippingCost : undefined,
+      province: delivery === "envio" ? province || null : null,
+      total: grandTotal,
       couponCode: coupon?.code,
       name: name.trim() || null,
       phone: phone.trim() || null,
@@ -228,7 +262,19 @@ export function CartDrawer({ giftWrapImage, giftNote, studioAddress, studioHours
                     </div>
 
                     {delivery === "envio" ? (
-                      <textarea value={address} onChange={(e) => setAddress(e.target.value)} rows={2} placeholder="Dirección de envío" className={`mt-3 w-full ${inputBase}`} />
+                      <div className="mt-3 space-y-3">
+                        {provinceOptions.length > 0 ? (
+                          <select value={province} onChange={(e) => setProvince(e.target.value)} className={`w-full ${inputBase}`}>
+                            <option value="">Provincia…</option>
+                            {provinceOptions.map((p) => (
+                              <option key={p} value={p}>{p}</option>
+                            ))}
+                          </select>
+                        ) : (
+                          <p className="text-xs text-navy/55">Coordinamos el costo de envío contigo por WhatsApp.</p>
+                        )}
+                        <textarea value={address} onChange={(e) => setAddress(e.target.value)} rows={2} placeholder="Dirección de envío" className={`w-full ${inputBase}`} />
+                      </div>
                     ) : (
                       <div className="mt-3 space-y-3">
                         <p className="text-xs text-navy/55">
@@ -249,7 +295,20 @@ export function CartDrawer({ giftWrapImage, giftNote, studioAddress, studioHours
                   <div className="space-y-1 text-sm pt-1">
                     <div className="flex justify-between text-navy/70"><span>Subtotal</span><span>{formatRD(subtotal)}</span></div>
                     {discount > 0 && <div className="flex justify-between text-salvia"><span>Descuento</span><span>−{formatRD(discount)}</span></div>}
-                    <div className="flex justify-between text-navy font-medium text-base pt-1"><span>Total</span><span>{formatRD(total)}</span></div>
+                    {delivery === "envio" && offersShipping && (
+                      <div className="flex justify-between text-navy/70">
+                        <span>Envío{province ? ` · ${province}` : ""}</span>
+                        <span>
+                          {!province ? "Elige provincia" : quote.free ? "Gratis" : formatRD(shippingCost)}
+                        </span>
+                      </div>
+                    )}
+                    {delivery === "envio" && missingForFree > 0 && (
+                      <p className="text-[0.72rem] text-salvia pt-0.5">
+                        Te faltan {formatRD(missingForFree)} para envío gratis.
+                      </p>
+                    )}
+                    <div className="flex justify-between text-navy font-medium text-base pt-1"><span>Total</span><span>{formatRD(grandTotal)}</span></div>
                   </div>
 
                   {error && <p className="text-xs text-terracota">{error}</p>}
