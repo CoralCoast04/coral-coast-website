@@ -257,23 +257,32 @@ export async function saveContent(
 
     const rows = [];
     for (const f of CONTENT_FIELDS) {
+      // El panel colapsa grupos: los campos de los grupos cerrados NO se envían.
+      // Solo actualizamos los que realmente vienen en el formulario, para no
+      // sobrescribir con vacío los demás (bug que borraba otras imágenes).
+      const file =
+        f.type === "image" ? (formData.get(`${f.key}__file`) as File | null) : null;
+      const hasFile = !!file && file.size > 0;
+      if (!formData.has(f.key) && !hasFile) continue;
+
       let value = String(formData.get(f.key) ?? "");
 
       // Campos de imagen: si suben un archivo, lo guardamos en Storage.
-      if (f.type === "image") {
-        const file = formData.get(`${f.key}__file`) as File | null;
-        if (file && file.size > 0) {
-          const ext = file.name.split(".").pop() || "jpg";
-          const path = `site/${f.key}-${Date.now()}.${ext}`;
-          const { error: upErr } = await supabase.storage
-            .from("products")
-            .upload(path, file, { upsert: true, contentType: file.type });
-          if (upErr) throw upErr;
-          value = supabase.storage.from("products").getPublicUrl(path).data.publicUrl;
-        }
+      if (hasFile && file) {
+        const ext = file.name.split(".").pop() || "jpg";
+        const path = `site/${f.key}-${Date.now()}.${ext}`;
+        const { error: upErr } = await supabase.storage
+          .from("products")
+          .upload(path, file, { upsert: true, contentType: file.type });
+        if (upErr) throw upErr;
+        value = supabase.storage.from("products").getPublicUrl(path).data.publicUrl;
       }
 
       rows.push({ key: f.key, value, updated_at: new Date().toISOString() });
+    }
+
+    if (rows.length === 0) {
+      return { ok: true, message: "No hubo cambios que guardar." };
     }
 
     const { error } = await supabase
