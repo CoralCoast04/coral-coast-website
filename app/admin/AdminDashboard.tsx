@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useEffect, useRef, useState, useTransition, type ChangeEvent } from "react";
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
-import { CheckCircle2, AlertCircle, Pencil, Trash2, Plus, X } from "lucide-react";
+import { CheckCircle2, AlertCircle, Pencil, Trash2, Plus, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { formatRD } from "@/lib/format";
 import { signOut } from "./actions";
 import {
@@ -651,6 +651,16 @@ function MediaManager({ initial }: { initial: Media[] }) {
     }
   }
 
+  function move(from: number, to: number) {
+    setMedia((arr) => {
+      if (to < 0 || to >= arr.length) return arr;
+      const next = arr.slice();
+      const [item] = next.splice(from, 1);
+      next.splice(to, 0, item);
+      return next;
+    });
+  }
+
   const firstImageIdx = media.findIndex((m) => m.type === "image");
 
   return (
@@ -668,11 +678,32 @@ function MediaManager({ initial }: { initial: Media[] }) {
                 <img src={m.url} alt="" className="h-full w-full object-cover" />
               )}
               {i === firstImageIdx && (
-                <span className="absolute bottom-0 inset-x-0 bg-navy/70 text-white text-[0.55rem] text-center py-0.5">Portada</span>
+                <span className="absolute top-0 left-0 bg-navy/75 text-white text-[0.5rem] tracking-wide px-1 py-0.5">Portada</span>
               )}
-              <button type="button" onClick={() => setMedia((arr) => arr.filter((_, idx) => idx !== i))} className="absolute top-1 right-1 bg-white/90 rounded-full p-0.5 text-navy hover:text-terracota">
+              <button type="button" onClick={() => setMedia((arr) => arr.filter((_, idx) => idx !== i))} aria-label="Quitar" className="absolute top-1 right-1 bg-white/90 rounded-full p-0.5 text-navy hover:text-terracota">
                 <X size={12} />
               </button>
+              {/* Reordenar: mover a la izquierda / derecha */}
+              <div className="absolute bottom-0 inset-x-0 flex justify-between bg-navy/45">
+                <button
+                  type="button"
+                  onClick={() => move(i, i - 1)}
+                  disabled={i === 0}
+                  aria-label="Mover antes"
+                  className="flex-1 flex items-center justify-center py-0.5 text-white hover:bg-navy/60 disabled:opacity-25 disabled:hover:bg-transparent"
+                >
+                  <ChevronLeft size={13} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => move(i, i + 1)}
+                  disabled={i === media.length - 1}
+                  aria-label="Mover después"
+                  className="flex-1 flex items-center justify-center py-0.5 text-white hover:bg-navy/60 disabled:opacity-25 disabled:hover:bg-transparent"
+                >
+                  <ChevronRight size={13} />
+                </button>
+              </div>
             </div>
           ))}
         </div>
@@ -684,7 +715,7 @@ function MediaManager({ initial }: { initial: Media[] }) {
         <input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="…o pega una URL de imagen/video" className={field} />
         <button type="button" onClick={addUrl} className="text-sm text-navy hover:text-terracota shrink-0 whitespace-nowrap">Añadir URL</button>
       </div>
-      <p className="text-[0.68rem] text-navy/40 mt-1">La primera imagen es la portada. Sube varias fotos y también videos.</p>
+      <p className="text-[0.68rem] text-navy/40 mt-1">La primera imagen es la portada. Usa las flechas ‹ › de cada foto para reordenarlas; guarda para aplicar.</p>
     </div>
   );
 }
