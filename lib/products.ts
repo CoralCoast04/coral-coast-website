@@ -16,6 +16,7 @@ export type Product = {
   sizes: string[]; // tallas disponibles (ej. ["S","M","L"]) — vacío = solo a la medida
   made_to_measure: boolean; // también disponible a la medida
   stock?: Record<string, number>; // inventario por talla, ej. { S: 3, M: 0, L: 5 }
+  care?: string | null; // cuidados de la prenda (una instrucción por línea)
 };
 
 /** Umbral de "quedan pocas": a este número o menos se muestra el aviso al público. */
