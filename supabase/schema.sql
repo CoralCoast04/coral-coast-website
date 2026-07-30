@@ -397,3 +397,9 @@ alter table public.orders add column if not exists province text;
 -- =============================================================================
 -- stock: { "S": 3, "M": 0, "L": 5 } — unidades por talla. {} = sin control de stock.
 alter table public.products add column if not exists stock jsonb not null default '{}'::jsonb;
+
+-- =============================================================================
+-- v8 · Cuidados de la prenda por producto
+-- =============================================================================
+-- care: texto libre (una instrucción por línea). null / vacío = sin cuidados.
+alter table public.products add column if not exists care text;

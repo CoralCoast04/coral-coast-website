@@ -29,6 +29,7 @@ type Product = {
   image_url: string; featured: boolean; sizes: string[] | null; made_to_measure: boolean;
   media: { type: "image" | "video"; url: string }[] | null;
   stock: Record<string, number> | null;
+  care: string | null;
 };
 type Coupon = {
   id: string; code: string; discount_type: string; discount_value: number;
@@ -195,6 +196,11 @@ function ProductManager({ products }: { products: Product[] }) {
             <div className="sm:col-span-2"><label className={label}>Tallas (separadas por coma)</label><input name="sizes" defaultValue={(editing?.sizes ?? []).join(", ")} placeholder="S, M, L, XL   —   deja vacío si es solo a la medida" className={field} /></div>
           </div>
           <div><label className={label}>Descripción</label><textarea name="description" rows={2} defaultValue={editing?.description} className={field} /></div>
+          <div>
+            <label className={label}>Cuidados de la prenda</label>
+            <textarea name="care" rows={3} defaultValue={editing?.care ?? ""} placeholder="Una instrucción por línea, ej.:&#10;Lavar a mano en agua fría&#10;No usar secadora&#10;Planchar a baja temperatura" className={field} />
+            <p className="text-[0.68rem] text-navy/40 mt-1">Escribe una instrucción por línea. Se muestra en la ficha del producto (déjalo vacío para no mostrarlo).</p>
+          </div>
 
           <div className="flex flex-wrap gap-6">
             <label className="flex items-center gap-2 text-sm text-navy/70">

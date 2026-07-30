@@ -94,6 +94,7 @@ export async function saveProduct(
       sale_price: saleRaw ? num(formData.get("sale_price")) : null,
       fabric: String(formData.get("fabric") || "").trim() || null,
       color: String(formData.get("color") || "").trim() || null,
+      care: String(formData.get("care") || "").trim() || null,
       image_url,
       media,
       featured: formData.get("featured") === "on",

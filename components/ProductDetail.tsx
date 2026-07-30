@@ -162,6 +162,25 @@ export function ProductDetail({ product }: { product: Product }) {
           )}
         </dl>
 
+        {/* Cuidados de la prenda */}
+        {product.care && product.care.trim() && (
+          <div className="mt-6 border-t border-navy/10 pt-5">
+            <p className="text-[0.72rem] tracking-[0.2em] uppercase text-navy/50 mb-2">Cuidados</p>
+            <ul className="space-y-1 text-sm text-navy/60">
+              {product.care
+                .split(/\r?\n/)
+                .map((l) => l.trim())
+                .filter(Boolean)
+                .map((line, i) => (
+                  <li key={i} className="flex gap-2">
+                    <span className="text-terracota shrink-0">·</span>
+                    <span>{line}</span>
+                  </li>
+                ))}
+            </ul>
+          </div>
+        )}
+
         {/* Tallas */}
         {options.length > 1 && (
           <div className="mt-8">
