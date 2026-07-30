@@ -20,11 +20,14 @@ type Props = {
   studioHours?: string;
   shippingRates?: ShippingRate[];
   freeShippingThreshold?: number;
+  userName?: string | null;
+  userEmail?: string | null;
 };
 
 export function CartDrawer({
   giftWrapImage, giftNote, studioAddress, studioHours,
   shippingRates = [], freeShippingThreshold = 0,
+  userName = null, userEmail = null,
 }: Props) {
   const {
     items, isOpen, closeCart, setQty, removeItem, toggleGift, clear,
@@ -34,9 +37,9 @@ export function CartDrawer({
   const [code, setCode] = useState("");
   const [couponMsg, setCouponMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [checking, setChecking] = useState(false);
-  const [name, setName] = useState("");
+  const [name, setName] = useState(userName ?? "");
   const [phone, setPhone] = useState("");
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(userEmail ?? "");
   const [delivery, setDelivery] = useState<"envio" | "retiro">("envio");
   const [address, setAddress] = useState("");
   const [province, setProvince] = useState("");
@@ -243,10 +246,17 @@ export function CartDrawer({
                   )}
 
                   {/* Datos */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Tu nombre" className={inputBase} />
-                    <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Teléfono" className={inputBase} />
-                    <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" placeholder="Correo (para confirmación)" className={`col-span-2 ${inputBase}`} />
+                  <div>
+                    {userEmail && (
+                      <p className="text-xs text-navy/55 mb-2">
+                        Comprando como <span className="text-navy">{userName || userEmail}</span>. Puedes editar los datos si el pedido es para otra persona.
+                      </p>
+                    )}
+                    <div className="grid grid-cols-2 gap-3">
+                      <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Tu nombre" className={inputBase} />
+                      <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Teléfono" className={inputBase} />
+                      <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" placeholder="Correo (para confirmación)" className={`col-span-2 ${inputBase}`} />
+                    </div>
                   </div>
 
                   {/* Entrega */}
