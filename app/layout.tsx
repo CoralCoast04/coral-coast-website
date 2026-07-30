@@ -47,8 +47,9 @@ export const metadata: Metadata = {
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  // Sesión del cliente (para navbar y wishlist)
+  // Sesión del cliente (para navbar, wishlist y checkout)
   let userEmail: string | null = null;
+  let userName: string | null = null;
   if (isSupabaseConfigured) {
     try {
       const supabase = await createClient();
@@ -56,6 +57,8 @@ export default async function RootLayout({
         data: { user },
       } = await supabase.auth.getUser();
       userEmail = user?.email ?? null;
+      const metaName = user?.user_metadata?.name;
+      userName = typeof metaName === "string" && metaName.trim() ? metaName : null;
     } catch {
       /* ignore */
     }
@@ -86,6 +89,8 @@ export default async function RootLayout({
               studioHours={content.studio_hours}
               shippingRates={shippingRates}
               freeShippingThreshold={freeShippingThreshold}
+              userName={userName}
+              userEmail={userEmail}
             />
           </WishlistProvider>
         </CartProvider>
