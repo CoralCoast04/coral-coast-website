@@ -50,8 +50,8 @@ export default async function AgendaPage() {
         <Reveal delay={0.15} className="relative hidden lg:block">
           <div className="sticky top-32 aspect-[3/4] overflow-hidden">
             <Image
-              src="https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&w=1200&q=80"
-              alt="Showroom Coral Coast"
+              src={content.agenda_image}
+              alt="Estudio Coral Coast"
               fill
               className="object-cover"
               sizes="50vw"

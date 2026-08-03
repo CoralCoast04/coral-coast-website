@@ -73,6 +73,7 @@ export const CONTENT_FIELDS: ContentField[] = [
   // ---------------------------------------------------------------------- Agenda
   { key: "agenda_title", label: "Título", group: "Agenda", type: "text", def: "Agenda tu cita." },
   { key: "agenda_text", label: "Texto", group: "Agenda", type: "textarea", def: "Reserva una sesión en el estudio privado. Tomamos tus medidas, elegimos tejido y color, y diseñamos la pieza contigo. Elige fecha y hora; confirmamos por WhatsApp o correo." },
+  { key: "agenda_image", label: "Imagen lateral", group: "Agenda", type: "image", def: U("photo-1594938291221-94f18cbb5660", 1200) },
 
   // ---------------------------------------------------------------- Sobre nosotros
   { key: "about_h1", label: "Título principal", group: "Sobre nosotros", type: "text", def: "Nacidos junto al mar, hechos con calma." },
