@@ -63,7 +63,7 @@ export default async function AdminPage() {
     );
   }
 
-  const [products, coupons, orders, appointments, messages, subscribers, content, shippingRates] =
+  const [products, coupons, orders, appointments, messages, subscribers, content, shippingRates, sales] =
     await Promise.all([
       supabase.from("products").select("*").order("featured", { ascending: false }).order("name"),
       supabase.from("coupons").select("*").order("created_at", { ascending: false }),
@@ -73,6 +73,7 @@ export default async function AdminPage() {
       supabase.from("subscribers").select("*").order("created_at", { ascending: false }),
       getContent(),
       getShippingRates(),
+      supabase.from("sales").select("*").order("sold_at", { ascending: false }).order("created_at", { ascending: false }).limit(300),
     ]);
 
   return (
@@ -88,6 +89,7 @@ export default async function AdminPage() {
         content={content}
         shippingRates={shippingRates}
         freeShippingThreshold={Number(content.free_shipping_threshold) || 0}
+        sales={sales.data ?? []}
       />
     </Shell>
   );
