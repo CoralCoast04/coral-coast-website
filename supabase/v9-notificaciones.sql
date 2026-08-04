@@ -3,6 +3,24 @@
 -- Ejecuta este bloque en el SQL Editor de Supabase (es idempotente).
 -- =============================================================================
 
+-- Requisito: función is_admin() (por si el esquema base v3 aún no se ha corrido).
+create table if not exists public.admins ( email text primary key );
+alter table public.admins enable row level security;
+drop policy if exists "admins_self_read" on public.admins;
+create policy "admins_self_read" on public.admins for select to authenticated using (true);
+
+create or replace function public.is_admin()
+returns boolean
+language sql stable security definer set search_path = public
+as $$
+  select (not exists (select 1 from public.admins))
+      or exists (
+        select 1 from public.admins a
+        where lower(a.email) = lower(coalesce(auth.jwt() ->> 'email', ''))
+      );
+$$;
+grant execute on function public.is_admin() to anon, authenticated;
+
 -- Suscripciones push de los administradores (un dispositivo = una fila)
 create table if not exists public.push_subscriptions (
   id         uuid primary key default gen_random_uuid(),
