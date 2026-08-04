@@ -20,6 +20,7 @@ import {
 } from "./manage-actions";
 import { CONTENT_FIELDS, CONTENT_GROUPS } from "@/lib/content-fields";
 import { DR_PROVINCES, type ShippingRate } from "@/lib/shipping";
+import { EnableNotifications } from "@/components/EnableNotifications";
 import { uploadToStorage } from "@/lib/supabase/client";
 
 /* ------------------------------- Tipos --------------------------------- */
@@ -103,6 +104,10 @@ export function AdminDashboard(props: {
         <form action={signOut}>
           <button className="btn btn-outline !py-2.5 !px-5 !text-[0.72rem]">Salir</button>
         </form>
+      </div>
+
+      <div className="mb-8">
+        <EnableNotifications />
       </div>
 
       {/* Tabs */}

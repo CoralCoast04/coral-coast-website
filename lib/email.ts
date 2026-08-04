@@ -147,6 +147,24 @@ export async function sendOrderNotification(o: OrderNotifyData): Promise<boolean
   });
 }
 
+/** Aviso al cliente: una pieza que esperaba volvió a estar disponible. */
+export async function sendStockAlert(o: {
+  to: string;
+  productName: string;
+  size?: string | null;
+  url: string;
+}): Promise<boolean> {
+  const body = `
+    <p style="line-height:1.6">¡Buenas noticias! <strong>${o.productName}</strong>${o.size ? ` (talla ${o.size})` : ""} volvió a estar disponible.</p>
+    <div style="margin:22px 0"><a href="${o.url}" style="background:#0D2B3E;color:#fff;text-decoration:none;padding:12px 24px;border-radius:9999px;font-size:14px">Verla ahora →</a></div>
+    <p style="line-height:1.5;color:#7C8F7A;font-size:13px">Nuestras piezas son limitadas — asegúrala pronto.</p>`;
+  return sendEmail({
+    to: o.to,
+    subject: `Volvió: ${o.productName} · Coral Coast`,
+    html: shell("Volvió a estar disponible", body),
+  });
+}
+
 /** Bienvenida a suscriptores de novedades. */
 export async function sendWelcome(to: string): Promise<boolean> {
   const body = `

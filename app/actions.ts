@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/server";
+import { sendPushToAdmins } from "@/lib/push.server";
 
 export type FormState = {
   ok: boolean;
@@ -46,6 +47,11 @@ export async function submitAppointment(
     const supabase = await createClient();
     const { error } = await supabase.from("appointments").insert(payload);
     if (error) throw error;
+    await sendPushToAdmins({
+      title: "Nueva cita 📅",
+      body: `${payload.name}${payload.preferred_date ? ` · ${payload.preferred_date}${payload.preferred_time ? " " + payload.preferred_time : ""}` : ""}`,
+      url: "/admin",
+    });
     return {
       ok: true,
       message:
@@ -91,6 +97,11 @@ export async function submitMessage(
     const supabase = await createClient();
     const { error } = await supabase.from("messages").insert(payload);
     if (error) throw error;
+    await sendPushToAdmins({
+      title: "Nuevo mensaje ✉️",
+      body: `${payload.name}${payload.subject ? ` · ${payload.subject}` : ""}`,
+      url: "/admin",
+    });
     return {
       ok: true,
       message: "¡Gracias por escribirnos! Te responderemos muy pronto.",

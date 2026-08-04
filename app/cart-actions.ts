@@ -2,6 +2,7 @@
 
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/server";
 import { sendOrderConfirmation, sendOrderNotification } from "@/lib/email";
+import { sendPushToAdmins } from "@/lib/push.server";
 
 /** Genera un código de seguimiento tipo CC-7F3K9. */
 function makeTrackingCode(): string {
@@ -148,6 +149,13 @@ export async function createOrder(
       pickupTime: payload.pickup_time,
       hasGift: has_gift,
     });
+    // Push a los admins (nueva orden)
+    const count = payload.items.reduce((s, i) => s + i.qty, 0);
+    await sendPushToAdmins({
+      title: "Nueva orden 🌾",
+      body: `${payload.customer_name || "Cliente"} · ${count} pieza${count === 1 ? "" : "s"} · RD$ ${payload.total.toLocaleString("es-DO")}`,
+      url: "/admin",
+    });
   }
 
   if (!isSupabaseConfigured) {
@@ -187,6 +195,31 @@ export async function createOrder(
   } catch {
     // No bloqueamos el cierre por WhatsApp si falla el guardado.
     return { ok: false, tracking_code };
+  }
+}
+
+/** El cliente pide que le avisen cuando una pieza agotada vuelva a stock. */
+export async function subscribeStockAlert(input: {
+  productId: string;
+  size: string | null;
+  email: string;
+}): Promise<{ ok: boolean; message: string }> {
+  const email = input.email.trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+    return { ok: false, message: "Ingresa un correo válido." };
+  if (!isSupabaseConfigured)
+    return { ok: true, message: "¡Listo! Te avisaremos cuando vuelva." };
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase.from("stock_alerts").insert({
+      product_id: input.productId,
+      size: input.size,
+      email,
+    });
+    if (error) throw error;
+    return { ok: true, message: "¡Listo! Te avisaremos por correo cuando vuelva." };
+  } catch {
+    return { ok: false, message: "No pudimos registrarte. Intenta de nuevo." };
   }
 }
 

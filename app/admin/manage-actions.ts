@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/server";
 import { CONTENT_FIELDS } from "@/lib/content";
 import { DR_PROVINCES } from "@/lib/shipping";
+import { sendPushToAdmins } from "@/lib/push.server";
+import { notifyRestock } from "@/lib/stock-alerts.server";
 
 export type ActionState = { ok: boolean; message: string } | null;
 
@@ -238,6 +240,17 @@ export async function saveStock(
       const { error } = await supabase.from("products").update({ stock }).eq("id", id);
       if (error) throw error;
     }
+
+    // Avisa a clientes en lista de espera que su pieza volvió a stock.
+    for (const id of byProduct.keys()) {
+      await notifyRestock(id);
+    }
+    // Notifica a los admins que el inventario cambió.
+    await sendPushToAdmins({
+      title: "Inventario actualizado 📦",
+      body: "Se actualizó el stock de la tienda.",
+      url: "/admin",
+    });
 
     revalidatePath("/admin");
     revalidatePath("/coleccion");
