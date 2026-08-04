@@ -13,6 +13,7 @@ import { formatRD } from "@/lib/format";
 import { useCart } from "@/lib/cart/CartContext";
 import { WishlistHeart } from "@/components/WishlistHeart";
 import { waLink, WA_MESSAGES } from "@/lib/whatsapp";
+import { subscribeStockAlert } from "@/app/cart-actions";
 
 export function ProductDetail({ product }: { product: Product }) {
   const { addItem } = useCart();
@@ -25,6 +26,10 @@ export function ProductDetail({ product }: { product: Product }) {
   );
   const [added, setAdded] = useState(false);
   const onSale = !!product.sale_price && product.sale_price > 0;
+
+  const [alertEmail, setAlertEmail] = useState("");
+  const [alertMsg, setAlertMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [alertSending, setAlertSending] = useState(false);
 
   const tracks = tracksStock(product);
   const soldOut = isSoldOut(product);
@@ -44,6 +49,19 @@ export function ProductDetail({ product }: { product: Product }) {
     addItem(product, size);
     setAdded(true);
     setTimeout(() => setAdded(false), 1400);
+  }
+
+  async function handleAlert() {
+    if (alertSending) return;
+    setAlertSending(true);
+    const res = await subscribeStockAlert({
+      productId: product.id,
+      size: size === A_LA_MEDIDA ? null : size,
+      email: alertEmail,
+    });
+    setAlertSending(false);
+    setAlertMsg({ ok: res.ok, text: res.message });
+    if (res.ok) setAlertEmail("");
   }
 
   return (
@@ -248,6 +266,38 @@ export function ProductDetail({ product }: { product: Product }) {
           <p className="mt-3 text-sm text-navy/55">
             Agotada por ahora — podemos confeccionarla <strong>a tu medida</strong>. Elige “A la medida” o escríbenos.
           </p>
+        )}
+
+        {/* Avísame cuando vuelva (talla agotada) */}
+        {tracks && size !== A_LA_MEDIDA && selStock === 0 && (
+          <div className="mt-6 border-t border-navy/10 pt-5">
+            <p className="text-[0.72rem] tracking-[0.2em] uppercase text-navy/50 mb-2">Avísame cuando vuelva</p>
+            <p className="text-sm text-navy/55 mb-3">
+              Déjanos tu correo y te avisamos apenas la talla {size} esté disponible.
+            </p>
+            <div className="flex gap-2">
+              <input
+                value={alertEmail}
+                onChange={(e) => setAlertEmail(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleAlert()}
+                type="email"
+                placeholder="tu@correo.com"
+                className="flex-1 bg-transparent border-b border-navy/25 py-2 text-sm text-navy placeholder:text-navy/40 focus:border-terracota focus:outline-none"
+              />
+              <button
+                onClick={handleAlert}
+                disabled={alertSending}
+                className="text-sm tracking-wide text-navy hover:text-terracota transition-colors disabled:opacity-50"
+              >
+                {alertSending ? "…" : "Avísame"}
+              </button>
+            </div>
+            {alertMsg && (
+              <p className={`mt-2 text-xs ${alertMsg.ok ? "text-salvia" : "text-terracota"}`}>
+                {alertMsg.text}
+              </p>
+            )}
+          </div>
         )}
       </div>
     </div>
