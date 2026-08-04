@@ -1,9 +1,10 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, Inter } from "next/font/google";
 import "./globals.css";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { WhatsAppFloat } from "@/components/WhatsAppFloat";
+import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 import { CartProvider } from "@/lib/cart/CartContext";
 import { CartDrawer } from "@/components/CartDrawer";
 import { WishlistProvider } from "@/lib/wishlist/WishlistContext";
@@ -42,6 +43,23 @@ export const metadata: Metadata = {
     type: "website",
     locale: "es_DO",
   },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Coral Coast",
+  },
+  icons: {
+    icon: "/icon.svg",
+    apple: "/icons/apple-touch-icon.png",
+  },
+  other: {
+    // Compatibilidad con iPhones más antiguos (meta legacy de Apple).
+    "apple-mobile-web-app-capable": "yes",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0d2b3e",
 };
 
 export default async function RootLayout({
@@ -82,6 +100,7 @@ export default async function RootLayout({
             <main className="flex-1">{children}</main>
             <Footer />
             <WhatsAppFloat />
+            <ServiceWorkerRegister />
             <CartDrawer
               giftWrapImage={content.gift_wrap_image}
               giftNote={content.gift_note}
