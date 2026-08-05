@@ -165,6 +165,61 @@ export async function sendStockAlert(o: {
   });
 }
 
+export type MonthlyReportEmail = {
+  label: string;
+  count: number;
+  entries: number;
+  revenue: number;
+  online: { count: number; revenue: number };
+  tienda: { count: number; revenue: number };
+  topItems: { item: string; qty: number; revenue: number }[];
+};
+
+/** Reporte mensual de ventas al estudio. */
+export async function sendMonthlyReport(r: MonthlyReportEmail): Promise<boolean> {
+  const top = r.topItems.length
+    ? r.topItems
+        .map(
+          (t) => `<tr>
+            <td style="padding:6px 0;border-bottom:1px solid #f0f0f0">${t.item}</td>
+            <td style="padding:6px 0;border-bottom:1px solid #f0f0f0;text-align:center">${t.qty}</td>
+            <td style="padding:6px 0;border-bottom:1px solid #f0f0f0;text-align:right">${rd(t.revenue)}</td>
+          </tr>`
+        )
+        .join("")
+    : `<tr><td colspan="3" style="padding:10px 0;color:#7C8F7A">Sin ventas registradas este mes.</td></tr>`;
+
+  const body = `
+    <p style="line-height:1.6">Resumen de ventas de <strong>${r.label}</strong>.</p>
+    <div style="display:flex;gap:12px;margin:20px 0;flex-wrap:wrap">
+      <div style="flex:1;min-width:120px;background:#F0F4F6;border-radius:6px;padding:14px;text-align:center">
+        <div style="font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#7C8F7A">Ingresos</div>
+        <div style="font-family:Georgia,serif;font-size:22px;color:#0D2B3E;margin-top:4px">${rd(r.revenue)}</div>
+      </div>
+      <div style="flex:1;min-width:120px;background:#F0F4F6;border-radius:6px;padding:14px;text-align:center">
+        <div style="font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#7C8F7A">Piezas</div>
+        <div style="font-family:Georgia,serif;font-size:22px;color:#0D2B3E;margin-top:4px">${r.count}</div>
+      </div>
+    </div>
+    <table style="width:100%;border-collapse:collapse;font-size:14px;margin-bottom:18px">
+      <tr><td style="color:#7C8F7A">🌐 Online</td><td style="text-align:right">${r.online.count} pzs · ${rd(r.online.revenue)}</td></tr>
+      <tr><td style="color:#7C8F7A">🏬 Tienda física</td><td style="text-align:right">${r.tienda.count} pzs · ${rd(r.tienda.revenue)}</td></tr>
+    </table>
+    <p style="font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#7C8F7A;margin-bottom:6px">Más vendidas</p>
+    <table style="width:100%;border-collapse:collapse;font-size:14px">
+      <tr style="color:#7C8F7A;font-size:12px;text-transform:uppercase">
+        <td style="padding-bottom:4px">Pieza</td><td style="padding-bottom:4px;text-align:center">Uds</td><td style="padding-bottom:4px;text-align:right">Ingresos</td>
+      </tr>
+      ${top}
+    </table>`;
+
+  return sendEmail({
+    to: STUDIO_EMAIL,
+    subject: `Reporte de ventas · ${r.label} · Coral Coast`,
+    html: shell("Reporte mensual de ventas", body),
+  });
+}
+
 /** Bienvenida a suscriptores de novedades. */
 export async function sendWelcome(to: string): Promise<boolean> {
   const body = `

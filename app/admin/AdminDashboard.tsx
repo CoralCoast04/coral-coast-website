@@ -18,6 +18,13 @@ import {
   saveStock,
   type ActionState,
 } from "./manage-actions";
+import {
+  addSale,
+  deleteSale,
+  registerOrderAsSale,
+  sendMonthlyReportNow,
+  type SalesActionState,
+} from "./sales-actions";
 import { CONTENT_FIELDS, CONTENT_GROUPS } from "@/lib/content-fields";
 import { DR_PROVINCES, type ShippingRate } from "@/lib/shipping";
 import { EnableNotifications } from "@/components/EnableNotifications";
@@ -45,6 +52,10 @@ type Order = {
   pickup_date: string | null; pickup_time: string | null; has_gift: boolean | null;
 };
 type Subscriber = { id: string; email: string; source: string | null; created_at: string };
+type Sale = {
+  id: string; item: string; qty: number; unit_price: number; total: number;
+  channel: string; note: string | null; sold_at: string; order_id: string | null; created_at: string;
+};
 type Appointment = {
   id: string; created_at: string; name: string; email: string | null; phone: string | null;
   preferred_date: string | null; preferred_time: string | null; interest: string | null; notes: string | null;
@@ -77,7 +88,7 @@ function SubmitBtn({ label }: { label: string }) {
   return <button type="submit" disabled={pending} className="btn disabled:opacity-60">{pending ? "Guardando…" : label}</button>;
 }
 
-const TABS = ["Productos", "Almacén", "Cupones", "Envíos", "Órdenes", "Contenido", "Suscriptores", "Citas", "Mensajes"] as const;
+const TABS = ["Productos", "Almacén", "Ventas", "Cupones", "Envíos", "Órdenes", "Contenido", "Suscriptores", "Citas", "Mensajes"] as const;
 
 export function AdminDashboard(props: {
   email: string;
@@ -90,6 +101,7 @@ export function AdminDashboard(props: {
   content: Record<string, string>;
   shippingRates: ShippingRate[];
   freeShippingThreshold: number;
+  sales: Sale[];
 }) {
   const [tab, setTab] = useState<(typeof TABS)[number]>("Productos");
 
@@ -115,7 +127,7 @@ export function AdminDashboard(props: {
         {TABS.map((t) => {
           const counts: Record<string, number> = {
             Productos: props.products.length, Cupones: props.coupons.length,
-            Almacén: props.products.length,
+            Almacén: props.products.length, Ventas: props.sales.length,
             Envíos: props.shippingRates.filter((r) => r.cost > 0).length,
             Órdenes: props.orders.length, Contenido: CONTENT_FIELDS.length,
             Suscriptores: props.subscribers.length,
@@ -132,6 +144,7 @@ export function AdminDashboard(props: {
 
       {tab === "Productos" && <ProductManager products={props.products} />}
       {tab === "Almacén" && <StockPanel products={props.products} />}
+      {tab === "Ventas" && <SalesPanel sales={props.sales} />}
       {tab === "Cupones" && <CouponManager coupons={props.coupons} />}
       {tab === "Envíos" && <ShippingPanel rates={props.shippingRates} threshold={props.freeShippingThreshold} />}
       {tab === "Órdenes" && <OrdersPanel orders={props.orders} />}
@@ -358,6 +371,9 @@ function OrdersPanel({ orders }: { orders: Order[] }) {
                 ) : null}
                 {o.has_gift && <span className="px-2 py-0.5 rounded-full bg-terracota/15 text-terracota text-xs">🎁 Regalo</span>}
               </div>
+              <div className="mt-3 pt-3 border-t border-navy/10">
+                <OrderSaleButton orderId={o.id} />
+              </div>
             </div>
           ))}
         </div>
@@ -414,6 +430,117 @@ function MessagesPanel({ messages }: { messages: Message[] }) {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+/* =============================== VENTAS =============================== */
+function SalesPanel({ sales }: { sales: Sale[] }) {
+  const [state, action] = useActionState(addSale, null);
+  const formRef = useRef<HTMLFormElement>(null);
+  const [pending, startTransition] = useTransition();
+  const [report, setReport] = useState<SalesActionState>(null);
+  const [reporting, startReport] = useTransition();
+
+  useEffect(() => { if (state?.ok) formRef.current?.reset(); }, [state]);
+
+  const today = new Date().toISOString().slice(0, 10);
+  const monthPrefix = today.slice(0, 7);
+  const sum = (a: Sale[]) => a.reduce((x, s) => x + Number(s.total || 0), 0);
+  const pcs = (a: Sale[]) => a.reduce((x, s) => x + Number(s.qty || 0), 0);
+  const monthSales = sales.filter((s) => s.sold_at?.startsWith(monthPrefix));
+  const todaySales = sales.filter((s) => s.sold_at === today);
+  const onlineM = monthSales.filter((s) => s.channel === "online");
+  const tiendaM = monthSales.filter((s) => s.channel !== "online");
+
+  const now = new Date();
+  function emailReport(offset: number) {
+    let y = now.getFullYear();
+    let m = now.getMonth() + 1 + offset;
+    while (m <= 0) { m += 12; y -= 1; }
+    while (m > 12) { m -= 12; y += 1; }
+    startReport(async () => setReport(await sendMonthlyReportNow(y, m)));
+  }
+
+  const Stat = ({ title, main, sub }: { title: string; main: string; sub: string }) => (
+    <div className="border border-navy/10 bg-white/40 p-4">
+      <p className="text-[0.68rem] tracking-[0.16em] uppercase text-navy/45">{title}</p>
+      <p className="font-serif text-2xl text-navy mt-1">{main}</p>
+      <p className="text-xs text-navy/50 mt-0.5">{sub}</p>
+    </div>
+  );
+
+  return (
+    <div>
+      <h2 className="font-serif text-2xl text-navy mb-2">Ventas</h2>
+      <p className="text-sm text-navy/50 mb-6 max-w-2xl">
+        Registra las piezas vendidas (tienda física u online). El día 1 de cada mes se
+        envía por correo el reporte del mes cerrado; también puedes enviarlo cuando quieras.
+      </p>
+
+      {/* Resumen */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+        <Stat title="Hoy" main={formatRD(sum(todaySales))} sub={`${pcs(todaySales)} pza(s)`} />
+        <Stat title="Este mes" main={formatRD(sum(monthSales))} sub={`${pcs(monthSales)} pza(s)`} />
+        <Stat title="Online (mes)" main={formatRD(sum(onlineM))} sub={`${pcs(onlineM)} pza(s)`} />
+        <Stat title="Tienda (mes)" main={formatRD(sum(tiendaM))} sub={`${pcs(tiendaM)} pza(s)`} />
+      </div>
+
+      {/* Reporte por correo */}
+      <div className="flex flex-wrap items-center gap-3 mb-8">
+        <button onClick={() => emailReport(0)} disabled={reporting} className="btn btn-outline !py-2.5 !px-5 !text-[0.72rem]">
+          Enviar reporte de este mes
+        </button>
+        <button onClick={() => emailReport(-1)} disabled={reporting} className="btn btn-outline !py-2.5 !px-5 !text-[0.72rem]">
+          …del mes pasado
+        </button>
+        {reporting && <span className="text-sm text-navy/50">Enviando…</span>}
+        {report && (
+          <span className={`text-sm ${report.ok ? "text-salvia" : "text-terracota"}`}>{report.message}</span>
+        )}
+      </div>
+
+      {/* Registrar venta */}
+      <form ref={formRef} action={action} className="bg-white/50 border border-navy/10 p-6 mb-8 space-y-4 max-w-2xl">
+        <h3 className="font-serif text-xl text-navy">Registrar venta</h3>
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div className="sm:col-span-2"><label className={label}>Pieza *</label><input name="item" required className={field} placeholder="Ej. Chacabana Clásica (M)" /></div>
+          <div><label className={label}>Cantidad</label><input name="qty" type="number" min="1" defaultValue={1} className={field} /></div>
+          <div><label className={label}>Precio unitario (RD$)</label><input name="unit_price" type="number" min="0" defaultValue={0} className={field} /></div>
+          <div><label className={label}>Canal</label>
+            <select name="channel" defaultValue="tienda" className={field}>
+              <option value="tienda">Tienda física</option>
+              <option value="online">Online</option>
+            </select>
+          </div>
+          <div><label className={label}>Fecha</label><input name="sold_at" type="date" defaultValue={today} className={field} /></div>
+          <div className="sm:col-span-2"><label className={label}>Nota (opcional)</label><input name="note" className={field} placeholder="Cliente, método de pago, etc." /></div>
+        </div>
+        <Feedback state={state} />
+        <SubmitBtn label="Registrar venta" />
+      </form>
+
+      {/* Lista de ventas */}
+      <div className="border border-navy/10 bg-white/40 divide-y divide-navy/10">
+        {sales.length === 0 && <p className="p-4 text-sm text-navy/50">Sin ventas registradas todavía.</p>}
+        {sales.map((s) => (
+          <div key={s.id} className="flex items-center justify-between gap-4 p-3">
+            <div className="min-w-0">
+              <p className="text-navy truncate">
+                {s.qty} × {s.item}
+                <span className={`ml-2 text-[0.6rem] uppercase tracking-wider px-1.5 py-0.5 rounded-full ${s.channel === "online" ? "bg-acero/20 text-acero" : "bg-salvia/20 text-salvia"}`}>
+                  {s.channel === "online" ? "Online" : "Tienda"}
+                </span>
+              </p>
+              <p className="text-xs text-navy/45">{s.sold_at}{s.note ? ` · ${s.note}` : ""}</p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="text-sm text-terracota">{formatRD(Number(s.total))}</span>
+              <DeleteButton onDelete={() => startTransition(() => deleteSale(s.id))} disabled={pending} />
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -767,6 +894,28 @@ function ImageField({ name, current }: { name: string; current: string }) {
 }
 
 /* ------------------------------ Helpers -------------------------------- */
+function OrderSaleButton({ orderId }: { orderId: string }) {
+  const [pending, start] = useTransition();
+  const [msg, setMsg] = useState<string | null>(null);
+  return (
+    <span className="flex items-center gap-2">
+      <button
+        onClick={() =>
+          start(async () => {
+            const r = await registerOrderAsSale(orderId);
+            setMsg(r?.ok ? "✓ Registrada en Ventas" : r?.message || "Error");
+          })
+        }
+        disabled={pending}
+        className="text-xs text-navy/60 hover:text-terracota underline decoration-navy/20 disabled:opacity-50"
+      >
+        {pending ? "Registrando…" : "Registrar como venta"}
+      </button>
+      {msg && <span className="text-xs text-salvia">{msg}</span>}
+    </span>
+  );
+}
+
 function DeleteButton({ onDelete, disabled }: { onDelete: () => void; disabled?: boolean }) {
   const [confirm, setConfirm] = useState(false);
   if (confirm) {

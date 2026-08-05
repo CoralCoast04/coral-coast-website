@@ -437,3 +437,24 @@ create policy "stock_alerts_admin_read"
   on public.stock_alerts for select to authenticated using (public.is_admin());
 create index if not exists stock_alerts_pending_idx
   on public.stock_alerts (product_id) where notified_at is null;
+
+-- =============================================================================
+-- v10 · Registro de ventas + reporte mensual
+-- =============================================================================
+create table if not exists public.sales (
+  id          uuid primary key default gen_random_uuid(),
+  item        text not null,
+  qty         integer not null default 1,
+  unit_price  numeric not null default 0,
+  total       numeric not null default 0,
+  channel     text not null default 'tienda',
+  note        text,
+  sold_at     date not null default current_date,
+  order_id    uuid,
+  created_at  timestamptz not null default now()
+);
+alter table public.sales enable row level security;
+drop policy if exists "sales_admin_all" on public.sales;
+create policy "sales_admin_all" on public.sales for all
+  to authenticated using (public.is_admin()) with check (public.is_admin());
+create index if not exists sales_sold_at_idx on public.sales (sold_at);
