@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { Plus, Check, MessageCircle, ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Check, MessageCircle, ArrowLeft, ChevronLeft, ChevronRight, ShoppingBag } from "lucide-react";
 import type { Product } from "@/lib/products";
 import {
   A_LA_MEDIDA, productMedia, sizeStock, tracksStock, canAddSize, isSoldOut, LOW_STOCK,
@@ -16,7 +16,7 @@ import { waLink, WA_MESSAGES } from "@/lib/whatsapp";
 import { subscribeStockAlert } from "@/app/cart-actions";
 
 export function ProductDetail({ product }: { product: Product }) {
-  const { addItem } = useCart();
+  const { addItem, openCart } = useCart();
   const options = [
     ...(product.sizes ?? []),
     ...(product.made_to_measure ? [A_LA_MEDIDA] : []),
@@ -49,6 +49,12 @@ export function ProductDetail({ product }: { product: Product }) {
     addItem(product, size);
     setAdded(true);
     setTimeout(() => setAdded(false), 1400);
+  }
+
+  function handleBuyNow() {
+    if (!canAdd) return;
+    addItem(product, size);
+    openCart();
   }
 
   async function handleAlert() {
@@ -245,27 +251,40 @@ export function ProductDetail({ product }: { product: Product }) {
         )}
 
         {/* Acciones */}
-        <div className="mt-10 flex flex-col sm:flex-row gap-4">
-          {canAdd ? (
-            <button onClick={handleAdd} className="btn flex-1">
-              {added ? (<><Check size={16} /> Agregado</>) : (<><Plus size={16} /> Agregar al carrito</>)}
-            </button>
-          ) : (
+        {canAdd ? (
+          <div className="mt-10 flex flex-col gap-3">
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button onClick={handleBuyNow} className="btn flex-1">
+                <ShoppingBag size={16} /> Comprar ahora
+              </button>
+              <button onClick={handleAdd} className="btn btn-outline flex-1">
+                {added ? (<><Check size={16} /> Agregado</>) : (<><Plus size={16} /> Agregar al carrito</>)}
+              </button>
+            </div>
+            <a
+              href={waLink(WA_MESSAGES.pieza(product.name))}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2 text-sm text-navy/55 hover:text-terracota transition-colors"
+            >
+              <MessageCircle size={15} /> Consultar por WhatsApp
+            </a>
+          </div>
+        ) : (
+          <div className="mt-10 flex flex-col sm:flex-row gap-4">
             <button disabled className="btn flex-1 !bg-navy/30 !border-navy/30 cursor-not-allowed">
               Agotada
             </button>
-          )}
-          <a
-            href={waLink(
-              canAdd ? WA_MESSAGES.pieza(product.name) : WA_MESSAGES.stock(product.name, size === A_LA_MEDIDA ? undefined : size)
-            )}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn btn-outline flex-1"
-          >
-            <MessageCircle size={16} /> {canAdd ? "Consultar" : "Consultar producción"}
-          </a>
-        </div>
+            <a
+              href={waLink(WA_MESSAGES.stock(product.name, size === A_LA_MEDIDA ? undefined : size))}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-outline flex-1"
+            >
+              <MessageCircle size={16} /> Consultar producción
+            </a>
+          </div>
+        )}
 
         {soldOut && product.made_to_measure && (
           <p className="mt-3 text-sm text-navy/55">
