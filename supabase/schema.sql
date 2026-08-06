@@ -458,3 +458,9 @@ drop policy if exists "sales_admin_all" on public.sales;
 create policy "sales_admin_all" on public.sales for all
   to authenticated using (public.is_admin()) with check (public.is_admin());
 create index if not exists sales_sold_at_idx on public.sales (sold_at);
+
+-- =============================================================================
+-- v11 · Precio a la medida por producto + bordado en ventas
+-- =============================================================================
+alter table public.products add column if not exists made_to_measure_price numeric;
+alter table public.sales add column if not exists bordado text;

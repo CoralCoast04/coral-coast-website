@@ -156,7 +156,12 @@ export function ProductDetail({ product }: { product: Product }) {
         <h1 className="font-serif text-4xl md:text-5xl text-navy leading-tight">{product.name}</h1>
 
         <div className="mt-4 flex items-center gap-3 text-lg">
-          {onSale ? (
+          {size === A_LA_MEDIDA && product.made_to_measure_price ? (
+            <>
+              <span className="text-terracota">{formatRD(product.made_to_measure_price)}</span>
+              <span className="text-xs tracking-[0.16em] uppercase text-navy/45">A la medida</span>
+            </>
+          ) : onSale ? (
             <>
               <span className="text-terracota">{formatRD(product.sale_price)}</span>
               <span className="text-navy/40 line-through text-base">{formatRD(product.price)}</span>

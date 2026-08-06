@@ -22,9 +22,11 @@ import {
   addSale,
   deleteSale,
   registerOrderAsSale,
-  sendMonthlyReportNow,
+  runReport,
+  emailReport,
   type SalesActionState,
 } from "./sales-actions";
+import type { Sale, SalesReport } from "@/lib/sales";
 import { CONTENT_FIELDS, CONTENT_GROUPS } from "@/lib/content-fields";
 import { DR_PROVINCES, type ShippingRate } from "@/lib/shipping";
 import { EnableNotifications } from "@/components/EnableNotifications";
@@ -38,6 +40,7 @@ type Product = {
   media: { type: "image" | "video"; url: string }[] | null;
   stock: Record<string, number> | null;
   care: string | null;
+  made_to_measure_price: number | null;
 };
 type Coupon = {
   id: string; code: string; discount_type: string; discount_value: number;
@@ -52,10 +55,6 @@ type Order = {
   pickup_date: string | null; pickup_time: string | null; has_gift: boolean | null;
 };
 type Subscriber = { id: string; email: string; source: string | null; created_at: string };
-type Sale = {
-  id: string; item: string; qty: number; unit_price: number; total: number;
-  channel: string; note: string | null; sold_at: string; order_id: string | null; created_at: string;
-};
 type Appointment = {
   id: string; created_at: string; name: string; email: string | null; phone: string | null;
   preferred_date: string | null; preferred_time: string | null; interest: string | null; notes: string | null;
@@ -144,7 +143,7 @@ export function AdminDashboard(props: {
 
       {tab === "Productos" && <ProductManager products={props.products} />}
       {tab === "Almacén" && <StockPanel products={props.products} />}
-      {tab === "Ventas" && <SalesPanel sales={props.sales} />}
+      {tab === "Ventas" && <SalesPanel sales={props.sales} products={props.products} />}
       {tab === "Cupones" && <CouponManager coupons={props.coupons} />}
       {tab === "Envíos" && <ShippingPanel rates={props.shippingRates} threshold={props.freeShippingThreshold} />}
       {tab === "Órdenes" && <OrdersPanel orders={props.orders} />}
@@ -209,6 +208,7 @@ function ProductManager({ products }: { products: Product[] }) {
             </div>
             <div><label className={label}>Precio (RD$)</label><input name="price" type="number" min="0" defaultValue={editing?.price ?? 0} className={field} /></div>
             <div><label className={label}>Oferta (RD$, opcional)</label><input name="sale_price" type="number" min="0" defaultValue={editing?.sale_price ?? ""} className={field} /></div>
+            <div><label className={label}>Precio a la medida (RD$, opcional)</label><input name="made_to_measure_price" type="number" min="0" defaultValue={editing?.made_to_measure_price ?? ""} placeholder="Vacío = usa el precio base" className={field} /></div>
             <div><label className={label}>Tejido</label><input name="fabric" defaultValue={editing?.fabric ?? ""} placeholder="Lino / Lino texturizado / otro" className={field} /></div>
             <div><label className={label}>Color</label><input name="color" defaultValue={editing?.color ?? ""} className={field} /></div>
             <div className="sm:col-span-2"><label className={label}>Tallas (separadas por coma)</label><input name="sizes" defaultValue={(editing?.sizes ?? []).join(", ")} placeholder="S, M, L, XL   —   deja vacío si es solo a la medida" className={field} /></div>
@@ -435,32 +435,53 @@ function MessagesPanel({ messages }: { messages: Message[] }) {
 }
 
 /* =============================== VENTAS =============================== */
-function SalesPanel({ sales }: { sales: Sale[] }) {
+function SalesPanel({ sales, products }: { sales: Sale[]; products: Product[] }) {
   const [state, action] = useActionState(addSale, null);
   const formRef = useRef<HTMLFormElement>(null);
   const [pending, startTransition] = useTransition();
-  const [report, setReport] = useState<SalesActionState>(null);
-  const [reporting, startReport] = useTransition();
 
-  useEffect(() => { if (state?.ok) formRef.current?.reset(); }, [state]);
-
+  // Reporte por rango de fechas
   const today = new Date().toISOString().slice(0, 10);
+  const monthStart = today.slice(0, 8) + "01";
+  const [from, setFrom] = useState(monthStart);
+  const [to, setTo] = useState(today);
+  const [report, setReport] = useState<SalesReport | null>(null);
+  const [reportMsg, setReportMsg] = useState<string | null>(null);
+  const [busy, startReport] = useTransition();
+
+  // Formulario: producto seleccionado auto-completa el precio
+  const [price, setPrice] = useState("");
+  const [bordadoOn, setBordadoOn] = useState(false);
+
+  useEffect(() => { if (state?.ok) { formRef.current?.reset(); setPrice(""); setBordadoOn(false); } }, [state]);
+
+  function onPickProduct(name: string) {
+    const p = products.find((pr) => pr.name === name);
+    if (p) setPrice(String(p.sale_price ?? p.price ?? ""));
+  }
+
+  function view() {
+    setReportMsg(null);
+    startReport(async () => {
+      const res = await runReport(from, to);
+      if (res.ok && res.report) { setReport(res.report); }
+      else { setReport(null); setReportMsg(res.message || "No se pudo generar."); }
+    });
+  }
+  function mail() {
+    setReportMsg(null);
+    startReport(async () => {
+      const res = await emailReport(from, to);
+      setReportMsg(res?.message || null);
+    });
+  }
+
+  const today2 = today;
   const monthPrefix = today.slice(0, 7);
   const sum = (a: Sale[]) => a.reduce((x, s) => x + Number(s.total || 0), 0);
   const pcs = (a: Sale[]) => a.reduce((x, s) => x + Number(s.qty || 0), 0);
   const monthSales = sales.filter((s) => s.sold_at?.startsWith(monthPrefix));
-  const todaySales = sales.filter((s) => s.sold_at === today);
-  const onlineM = monthSales.filter((s) => s.channel === "online");
-  const tiendaM = monthSales.filter((s) => s.channel !== "online");
-
-  const now = new Date();
-  function emailReport(offset: number) {
-    let y = now.getFullYear();
-    let m = now.getMonth() + 1 + offset;
-    while (m <= 0) { m += 12; y -= 1; }
-    while (m > 12) { m -= 12; y += 1; }
-    startReport(async () => setReport(await sendMonthlyReportNow(y, m)));
-  }
+  const todaySales = sales.filter((s) => s.sold_at === today2);
 
   const Stat = ({ title, main, sub }: { title: string; main: string; sub: string }) => (
     <div className="border border-navy/10 bg-white/40 p-4">
@@ -474,39 +495,45 @@ function SalesPanel({ sales }: { sales: Sale[] }) {
     <div>
       <h2 className="font-serif text-2xl text-navy mb-2">Ventas</h2>
       <p className="text-sm text-navy/50 mb-6 max-w-2xl">
-        Registra las piezas vendidas (tienda física u online). El día 1 de cada mes se
-        envía por correo el reporte del mes cerrado; también puedes enviarlo cuando quieras.
+        Registra las piezas vendidas (tienda física u online). Genera reportes de cualquier
+        rango de fechas: míralos en pantalla, expórtalos a PDF o envíalos por correo.
       </p>
 
-      {/* Resumen */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+      {/* Resumen rápido */}
+      <div className="grid grid-cols-2 gap-3 mb-8 max-w-md">
         <Stat title="Hoy" main={formatRD(sum(todaySales))} sub={`${pcs(todaySales)} pza(s)`} />
         <Stat title="Este mes" main={formatRD(sum(monthSales))} sub={`${pcs(monthSales)} pza(s)`} />
-        <Stat title="Online (mes)" main={formatRD(sum(onlineM))} sub={`${pcs(onlineM)} pza(s)`} />
-        <Stat title="Tienda (mes)" main={formatRD(sum(tiendaM))} sub={`${pcs(tiendaM)} pza(s)`} />
       </div>
 
-      {/* Reporte por correo */}
-      <div className="flex flex-wrap items-center gap-3 mb-8">
-        <button onClick={() => emailReport(0)} disabled={reporting} className="btn btn-outline !py-2.5 !px-5 !text-[0.72rem]">
-          Enviar reporte de este mes
-        </button>
-        <button onClick={() => emailReport(-1)} disabled={reporting} className="btn btn-outline !py-2.5 !px-5 !text-[0.72rem]">
-          …del mes pasado
-        </button>
-        {reporting && <span className="text-sm text-navy/50">Enviando…</span>}
-        {report && (
-          <span className={`text-sm ${report.ok ? "text-salvia" : "text-terracota"}`}>{report.message}</span>
-        )}
+      {/* Reporte por rango */}
+      <div className="bg-white/50 border border-navy/10 p-6 mb-8">
+        <h3 className="font-serif text-xl text-navy mb-4">Reporte por fechas</h3>
+        <div className="flex flex-wrap items-end gap-3">
+          <div><label className={label}>Desde</label><input type="date" value={from} max={to} onChange={(e) => setFrom(e.target.value)} className={field} /></div>
+          <div><label className={label}>Hasta</label><input type="date" value={to} min={from} max={today} onChange={(e) => setTo(e.target.value)} className={field} /></div>
+          <button onClick={view} disabled={busy} className="btn !py-2.5 !px-5 !text-[0.72rem]">Ver reporte</button>
+          {report && <button onClick={() => printReport(report)} className="btn btn-outline !py-2.5 !px-5 !text-[0.72rem]">Exportar PDF</button>}
+          <button onClick={mail} disabled={busy} className="btn btn-outline !py-2.5 !px-5 !text-[0.72rem]">Enviar por correo</button>
+          {busy && <span className="text-sm text-navy/50">…</span>}
+          {reportMsg && <span className="text-sm text-salvia">{reportMsg}</span>}
+        </div>
+
+        {report && <ReportView report={report} />}
       </div>
 
       {/* Registrar venta */}
       <form ref={formRef} action={action} className="bg-white/50 border border-navy/10 p-6 mb-8 space-y-4 max-w-2xl">
         <h3 className="font-serif text-xl text-navy">Registrar venta</h3>
         <div className="grid sm:grid-cols-2 gap-4">
-          <div className="sm:col-span-2"><label className={label}>Pieza *</label><input name="item" required className={field} placeholder="Ej. Chacabana Clásica (M)" /></div>
+          <div className="sm:col-span-2">
+            <label className={label}>Pieza *</label>
+            <input name="item" required list="prod-list" onChange={(e) => onPickProduct(e.target.value)} className={field} placeholder="Elige de la lista o escribe…" />
+            <datalist id="prod-list">
+              {products.map((p) => <option key={p.id} value={p.name} />)}
+            </datalist>
+          </div>
           <div><label className={label}>Cantidad</label><input name="qty" type="number" min="1" defaultValue={1} className={field} /></div>
-          <div><label className={label}>Precio unitario (RD$)</label><input name="unit_price" type="number" min="0" defaultValue={0} className={field} /></div>
+          <div><label className={label}>Precio unitario (RD$)</label><input name="unit_price" type="number" min="0" value={price} onChange={(e) => setPrice(e.target.value)} className={field} /></div>
           <div><label className={label}>Canal</label>
             <select name="channel" defaultValue="tienda" className={field}>
               <option value="tienda">Tienda física</option>
@@ -514,6 +541,17 @@ function SalesPanel({ sales }: { sales: Sale[] }) {
             </select>
           </div>
           <div><label className={label}>Fecha</label><input name="sold_at" type="date" defaultValue={today} className={field} /></div>
+          <div className="sm:col-span-2">
+            <label className="flex items-center gap-2 text-sm text-navy/70">
+              <input type="checkbox" checked={bordadoOn} onChange={(e) => setBordadoOn(e.target.checked)} /> Con bordado
+            </label>
+          </div>
+          {bordadoOn && (
+            <>
+              <div><label className={label}>Detalle del bordado</label><input name="bordado" className={field} placeholder="Iniciales, posición…" /></div>
+              <div><label className={label}>Costo del bordado (RD$)</label><input name="bordado_cost" type="number" min="0" defaultValue={0} className={field} /></div>
+            </>
+          )}
           <div className="sm:col-span-2"><label className={label}>Nota (opcional)</label><input name="note" className={field} placeholder="Cliente, método de pago, etc." /></div>
         </div>
         <Feedback state={state} />
@@ -531,8 +569,9 @@ function SalesPanel({ sales }: { sales: Sale[] }) {
                 <span className={`ml-2 text-[0.6rem] uppercase tracking-wider px-1.5 py-0.5 rounded-full ${s.channel === "online" ? "bg-acero/20 text-acero" : "bg-salvia/20 text-salvia"}`}>
                   {s.channel === "online" ? "Online" : "Tienda"}
                 </span>
+                {s.bordado && <span className="ml-2 text-[0.6rem] uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-arena/40 text-navy/70">Bordado</span>}
               </p>
-              <p className="text-xs text-navy/45">{s.sold_at}{s.note ? ` · ${s.note}` : ""}</p>
+              <p className="text-xs text-navy/45">{s.sold_at}{s.bordado ? ` · ${s.bordado}` : ""}{s.note ? ` · ${s.note}` : ""}</p>
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <span className="text-sm text-terracota">{formatRD(Number(s.total))}</span>
@@ -543,6 +582,77 @@ function SalesPanel({ sales }: { sales: Sale[] }) {
       </div>
     </div>
   );
+}
+
+/* Reporte en pantalla */
+function ReportView({ report }: { report: SalesReport }) {
+  return (
+    <div className="mt-6 border-t border-navy/10 pt-5">
+      <p className="font-serif text-lg text-navy mb-3">{report.label}</p>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+        <div className="bg-fondo p-3 text-center"><p className="text-[0.62rem] uppercase tracking-wider text-navy/45">Ingresos</p><p className="font-serif text-xl text-navy">{formatRD(report.revenue)}</p></div>
+        <div className="bg-fondo p-3 text-center"><p className="text-[0.62rem] uppercase tracking-wider text-navy/45">Piezas</p><p className="font-serif text-xl text-navy">{report.count}</p></div>
+        <div className="bg-fondo p-3 text-center"><p className="text-[0.62rem] uppercase tracking-wider text-navy/45">Online</p><p className="text-sm text-navy mt-1">{report.online.count} · {formatRD(report.online.revenue)}</p></div>
+        <div className="bg-fondo p-3 text-center"><p className="text-[0.62rem] uppercase tracking-wider text-navy/45">Tienda</p><p className="text-sm text-navy mt-1">{report.tienda.count} · {formatRD(report.tienda.revenue)}</p></div>
+      </div>
+      {report.topItems.length > 0 ? (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="text-left text-xs uppercase tracking-wider text-navy/50">
+              <tr><th className="py-1">Pieza</th><th className="py-1 text-center">Uds</th><th className="py-1 text-right">Ingresos</th></tr>
+            </thead>
+            <tbody>
+              {report.topItems.map((t, i) => (
+                <tr key={i} className="border-t border-navy/10">
+                  <td className="py-1.5 text-navy">{t.item}</td>
+                  <td className="py-1.5 text-center text-navy/70">{t.qty}</td>
+                  <td className="py-1.5 text-right text-terracota">{formatRD(t.revenue)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <p className="text-sm text-navy/50">Sin ventas en este rango.</p>
+      )}
+    </div>
+  );
+}
+
+/* Exportar el reporte a PDF (abre una ventana imprimible → Guardar como PDF). */
+function printReport(r: SalesReport) {
+  const rd = (n: number) => "RD$ " + Math.round(n).toLocaleString("es-DO");
+  const rows = r.topItems.length
+    ? r.topItems.map((t) => `<tr><td>${t.item}</td><td style="text-align:center">${t.qty}</td><td style="text-align:right">${rd(t.revenue)}</td></tr>`).join("")
+    : `<tr><td colspan="3" style="color:#888">Sin ventas en este rango.</td></tr>`;
+  const html = `<!doctype html><html><head><meta charset="utf-8"><title>Reporte ${r.label}</title>
+    <style>
+      body{font-family:Georgia,serif;color:#0D2B3E;padding:40px;max-width:720px;margin:auto}
+      h1{font-size:24px;margin:0 0 4px} .sub{color:#7C8F7A;font-size:13px;margin-bottom:24px}
+      .cards{display:flex;gap:12px;margin-bottom:24px;flex-wrap:wrap}
+      .card{flex:1;min-width:120px;background:#F0F4F6;border-radius:8px;padding:14px;text-align:center}
+      .card .k{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#7C8F7A}
+      .card .v{font-size:20px;margin-top:4px}
+      table{width:100%;border-collapse:collapse;font-size:14px} th{text-align:left;color:#7C8F7A;font-size:11px;text-transform:uppercase;border-bottom:1px solid #ddd;padding:6px 0}
+      td{padding:6px 0;border-bottom:1px solid #f0f0f0}
+    </style></head><body>
+    <h1>Coral Coast · Reporte de ventas</h1>
+    <div class="sub">${r.label}</div>
+    <div class="cards">
+      <div class="card"><div class="k">Ingresos</div><div class="v">${rd(r.revenue)}</div></div>
+      <div class="card"><div class="k">Piezas</div><div class="v">${r.count}</div></div>
+      <div class="card"><div class="k">Online</div><div class="v" style="font-size:14px">${r.online.count} · ${rd(r.online.revenue)}</div></div>
+      <div class="card"><div class="k">Tienda</div><div class="v" style="font-size:14px">${r.tienda.count} · ${rd(r.tienda.revenue)}</div></div>
+    </div>
+    <table><thead><tr><th>Pieza</th><th style="text-align:center">Uds</th><th style="text-align:right">Ingresos</th></tr></thead>
+    <tbody>${rows}</tbody></table>
+    </body></html>`;
+  const w = window.open("", "_blank");
+  if (!w) return;
+  w.document.write(html);
+  w.document.close();
+  w.focus();
+  setTimeout(() => w.print(), 300);
 }
 
 /* =============================== ALMACÉN ============================== */

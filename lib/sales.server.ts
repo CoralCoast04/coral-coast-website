@@ -1,64 +1,60 @@
 import "server-only";
 import { createServiceClient, isServiceConfigured } from "@/lib/supabase/admin";
+import type { SalesReport } from "@/lib/sales";
 
-export type Sale = {
-  id: string;
-  item: string;
-  qty: number;
-  unit_price: number;
-  total: number;
-  channel: string; // 'online' | 'tienda'
-  note: string | null;
-  sold_at: string; // YYYY-MM-DD
-  order_id: string | null;
-  created_at: string;
-};
-
-export type MonthlyReport = {
-  year: number;
-  month: number; // 1-12
-  label: string;
-  count: number; // piezas (suma de qty)
-  entries: number; // registros de venta
-  revenue: number;
-  online: { count: number; revenue: number };
-  tienda: { count: number; revenue: number };
-  topItems: { item: string; qty: number; revenue: number }[];
-};
+export type { Sale, SalesReport } from "@/lib/sales";
 
 const MONTHS = [
   "enero", "febrero", "marzo", "abril", "mayo", "junio",
   "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
 ];
+const MONTHS_SHORT = [
+  "ene", "feb", "mar", "abr", "may", "jun",
+  "jul", "ago", "sep", "oct", "nov", "dic",
+];
 
-/** Primer día del mes y del mes siguiente (ISO YYYY-MM-DD, UTC). */
+function fmtDay(iso: string): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  return `${d} ${MONTHS_SHORT[m - 1]} ${y}`;
+}
+
+/** Etiqueta legible del rango: "15 mar 2024" o "1 dic 2022 – 31 dic 2022". */
+export function rangeLabel(fromISO: string, toISO: string): string {
+  return fromISO === toISO ? fmtDay(fromISO) : `${fmtDay(fromISO)} – ${fmtDay(toISO)}`;
+}
+
+/** Primer día del mes y del mes siguiente (ISO, UTC). */
 export function monthRange(year: number, month: number) {
   const from = new Date(Date.UTC(year, month - 1, 1));
-  const to = new Date(Date.UTC(year, month, 1));
-  return { fromISO: from.toISOString().slice(0, 10), toISO: to.toISOString().slice(0, 10) };
+  const last = new Date(Date.UTC(year, month, 0)); // último día del mes
+  return {
+    fromISO: from.toISOString().slice(0, 10),
+    toISO: last.toISOString().slice(0, 10),
+    label: `${MONTHS[month - 1]} ${year}`,
+  };
 }
 
 /** Mes calendario anterior al de hoy (para el reporte automático de fin de mes). */
 export function previousMonth(now = new Date()): { year: number; month: number } {
   const y = now.getUTCFullYear();
-  const m = now.getUTCMonth(); // 0-11 (el mes actual); el anterior es m
+  const m = now.getUTCMonth(); // 0-11 = mes actual; el anterior es m
   if (m === 0) return { year: y - 1, month: 12 };
   return { year: y, month: m };
 }
 
-/** Agrega las ventas de un mes para el reporte. Usa service role. */
-export async function getMonthlyReport(
-  year: number,
-  month: number
-): Promise<MonthlyReport | null> {
+/** Agrega las ventas de un rango (fechas inclusivas). Usa service role. */
+export async function getRangeReport(
+  fromISO: string,
+  toISO: string,
+  label?: string
+): Promise<SalesReport | null> {
   if (!isServiceConfigured) return null;
-  const { fromISO, toISO } = monthRange(year, month);
   const supabase = createServiceClient();
   const { data, error } = await supabase
     .from("sales")
     .select("item, qty, total, channel, sold_at")
     .gte("sold_at", fromISO)
-    .lt("sold_at", toISO);
+    .lte("sold_at", toISO);
   if (error) return null;
 
   const rows = data ?? [];
@@ -85,12 +81,12 @@ export async function getMonthlyReport(
   const topItems = [...itemMap.entries()]
     .map(([item, v]) => ({ item, qty: v.qty, revenue: v.revenue }))
     .sort((a, b) => b.revenue - a.revenue)
-    .slice(0, 8);
+    .slice(0, 12);
 
   return {
-    year,
-    month,
-    label: `${MONTHS[month - 1]} ${year}`,
+    fromISO,
+    toISO,
+    label: label ?? rangeLabel(fromISO, toISO),
     count,
     entries: rows.length,
     revenue,
@@ -98,4 +94,13 @@ export async function getMonthlyReport(
     tienda,
     topItems,
   };
+}
+
+/** Reporte de un mes calendario (lo usa el cron mensual). */
+export async function getMonthlyReport(
+  year: number,
+  month: number
+): Promise<SalesReport | null> {
+  const { fromISO, toISO, label } = monthRange(year, month);
+  return getRangeReport(fromISO, toISO, label);
 }

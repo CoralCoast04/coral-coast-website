@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/server";
-import { getMonthlyReport } from "@/lib/sales.server";
+import { getRangeReport, type SalesReport } from "@/lib/sales.server";
 import { sendMonthlyReport } from "@/lib/email";
 
 export type SalesActionState = { ok: boolean; message: string } | null;
@@ -41,15 +41,18 @@ export async function addSale(
       String(formData.get("sold_at") || "").trim() ||
       new Date().toISOString().slice(0, 10);
     const note = String(formData.get("note") || "").trim() || null;
+    const bordado = String(formData.get("bordado") || "").trim() || null;
+    const bordadoCost = num(formData.get("bordado_cost"));
 
     const { error } = await supabase.from("sales").insert({
       item,
       qty,
       unit_price,
-      total: qty * unit_price,
+      total: qty * unit_price + bordadoCost,
       channel,
       sold_at,
       note,
+      bordado,
     });
     if (error) throw error;
 
@@ -103,14 +106,37 @@ export async function registerOrderAsSale(orderId: string): Promise<SalesActionS
   }
 }
 
-/** Genera y envía por correo el reporte de un mes (para el botón del panel). */
-export async function sendMonthlyReportNow(
-  year: number,
-  month: number
+/** Genera el reporte de un rango para verlo en pantalla / exportar a PDF. */
+export async function runReport(
+  fromISO: string,
+  toISO: string
+): Promise<{ ok: boolean; message?: string; report?: SalesReport }> {
+  try {
+    await requireAdmin();
+    if (!fromISO || !toISO) return { ok: false, message: "Elige las dos fechas." };
+    const [from, to] = fromISO <= toISO ? [fromISO, toISO] : [toISO, fromISO];
+    const report = await getRangeReport(from, to);
+    if (!report)
+      return {
+        ok: false,
+        message: "No se pudo generar el reporte (falta la service role de Supabase).",
+      };
+    return { ok: true, report };
+  } catch (e) {
+    return { ok: false, message: e instanceof Error ? e.message : "Error." };
+  }
+}
+
+/** Envía por correo el reporte de un rango. */
+export async function emailReport(
+  fromISO: string,
+  toISO: string
 ): Promise<SalesActionState> {
   try {
     await requireAdmin();
-    const report = await getMonthlyReport(year, month);
+    if (!fromISO || !toISO) return { ok: false, message: "Elige las dos fechas." };
+    const [from, to] = fromISO <= toISO ? [fromISO, toISO] : [toISO, fromISO];
+    const report = await getRangeReport(from, to);
     if (!report)
       return {
         ok: false,
