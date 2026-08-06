@@ -164,7 +164,12 @@ function ProductCard({ p, index }: { p: Product; index: number }) {
         <p className="mt-1 text-[0.7rem] tracking-[0.16em] uppercase text-salvia">{p.category}</p>
 
         <div className="mt-1.5 flex items-center gap-2 text-sm flex-wrap">
-          {onSale ? (
+          {size === A_LA_MEDIDA && p.made_to_measure_price ? (
+            <>
+              <span className="text-terracota">{formatRD(p.made_to_measure_price)}</span>
+              <span className="text-[0.6rem] tracking-wider uppercase text-navy/45">a la medida</span>
+            </>
+          ) : onSale ? (
             <>
               <span className="text-terracota">{formatRD(p.sale_price)}</span>
               <span className="text-navy/40 line-through text-xs">{formatRD(p.price)}</span>

@@ -102,6 +102,10 @@ export async function saveProduct(
       featured: formData.get("featured") === "on",
       sizes,
       made_to_measure: formData.get("made_to_measure") === "on",
+      made_to_measure_price:
+        String(formData.get("made_to_measure_price") || "").trim()
+          ? num(formData.get("made_to_measure_price"))
+          : null,
     };
 
     const query = id

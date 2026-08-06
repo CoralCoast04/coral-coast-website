@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { effectivePrice } from "@/lib/format";
-import type { Product } from "@/lib/products";
+import { A_LA_MEDIDA, type Product } from "@/lib/products";
 
 export type CartItem = {
   key: string; // id + talla (para diferenciar la misma pieza en distinta talla)
@@ -82,6 +82,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   function addItem(product: Product, size: string, qty = 1) {
     const key = `${product.id}::${size}`;
+    // Precio "a la medida": si se elige esa opción y hay un precio definido,
+    // se usa ese (sin oferta), sin alterar los precios por talla.
+    const mtm = product.made_to_measure_price;
+    const useMtm = size === A_LA_MEDIDA && mtm != null && mtm > 0;
     setItems((prev) => {
       const existing = prev.find((i) => i.key === key);
       if (existing) {
@@ -97,8 +101,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
           slug: product.slug,
           name: product.name,
           image_url: product.image_url,
-          price: product.price,
-          sale_price: product.sale_price,
+          price: useMtm ? mtm : product.price,
+          sale_price: useMtm ? null : product.sale_price,
           size,
           qty,
           gift: false,
