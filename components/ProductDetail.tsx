@@ -4,7 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { Plus, Check, MessageCircle, ArrowLeft, ChevronLeft, ChevronRight, ShoppingBag } from "lucide-react";
+import { Plus, Check, MessageCircle, ArrowLeft, ChevronLeft, ChevronRight, ShoppingBag, ChevronDown } from "lucide-react";
+import type { ReactNode } from "react";
 import type { Product } from "@/lib/products";
 import {
   A_LA_MEDIDA, productMedia, sizeStock, tracksStock, canAddSize, isSoldOut, LOW_STOCK,
@@ -177,8 +178,6 @@ export function ProductDetail({ product }: { product: Product }) {
           )}
         </div>
 
-        <p className="mt-6 text-navy/70 font-light leading-relaxed">{product.description}</p>
-
         <dl className="mt-6 space-y-1 text-sm text-navy/60">
           {product.fabric && (
             <div className="flex gap-2"><dt className="text-navy/40">Tejido:</dt><dd>{product.fabric}</dd></div>
@@ -191,24 +190,30 @@ export function ProductDetail({ product }: { product: Product }) {
           )}
         </dl>
 
-        {/* Cuidados de la prenda */}
-        {product.care && product.care.trim() && (
-          <div className="mt-6 border-t border-navy/10 pt-5">
-            <p className="text-[0.72rem] tracking-[0.2em] uppercase text-navy/50 mb-2">Cuidados</p>
-            <ul className="space-y-1 text-sm text-navy/60">
-              {product.care
-                .split(/\r?\n/)
-                .map((l) => l.trim())
-                .filter(Boolean)
-                .map((line, i) => (
-                  <li key={i} className="flex gap-2">
-                    <span className="text-terracota shrink-0">·</span>
-                    <span>{line}</span>
-                  </li>
-                ))}
-            </ul>
-          </div>
-        )}
+        {/* Secciones desplegables */}
+        <div className="mt-6">
+          {product.description && (
+            <InfoSection title="Descripción" defaultOpen>
+              <p className="text-navy/70 font-light leading-relaxed">{product.description}</p>
+            </InfoSection>
+          )}
+          {product.care && product.care.trim() && (
+            <InfoSection title="Cuidados de la prenda">
+              <ul className="space-y-1 text-sm text-navy/65">
+                {product.care
+                  .split(/\r?\n/)
+                  .map((l) => l.trim())
+                  .filter(Boolean)
+                  .map((line, i) => (
+                    <li key={i} className="flex gap-2">
+                      <span className="text-terracota shrink-0">·</span>
+                      <span>{line}</span>
+                    </li>
+                  ))}
+              </ul>
+            </InfoSection>
+          )}
+        </div>
 
         {/* Tallas */}
         {options.length > 1 && (
@@ -292,6 +297,8 @@ export function ProductDetail({ product }: { product: Product }) {
           </p>
         )}
 
+        {/* (secciones desplegables definidas con InfoSection, ver abajo) */}
+
         {/* Avísame cuando vuelva (talla agotada) */}
         {tracks && size !== A_LA_MEDIDA && selStock === 0 && (
           <div className="mt-6 border-t border-navy/10 pt-5">
@@ -324,6 +331,50 @@ export function ProductDetail({ product }: { product: Product }) {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+/* Sección desplegable (acordeón) — el cliente abre/cierra a su gusto. */
+function InfoSection({
+  title,
+  children,
+  defaultOpen = false,
+}: {
+  title: string;
+  children: ReactNode;
+  defaultOpen?: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className="border-t border-navy/10">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="w-full flex items-center justify-between py-4 text-left group"
+      >
+        <span className="text-[0.72rem] tracking-[0.2em] uppercase text-navy/60 group-hover:text-navy transition-colors">
+          {title}
+        </span>
+        <ChevronDown
+          size={16}
+          className={`text-navy/40 transition-transform duration-300 ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+            className="overflow-hidden"
+          >
+            <div className="pb-5">{children}</div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
