@@ -142,10 +142,10 @@ export async function emailReport(
         ok: false,
         message: "No se pudo generar el reporte (falta la service role de Supabase).",
       };
-    const ok = await sendMonthlyReport(report);
-    return ok
+    const res = await sendMonthlyReport(report);
+    return res.ok
       ? { ok: true, message: "Reporte enviado por correo." }
-      : { ok: false, message: "No se pudo enviar (revisa la configuración de Resend)." };
+      : { ok: false, message: `No se pudo enviar: ${res.error ?? "revisa la configuración de Resend."}` };
   } catch (e) {
     return { ok: false, message: e instanceof Error ? e.message : "Error." };
   }

@@ -24,6 +24,6 @@ export async function GET(request: Request) {
       status: 503,
     });
   }
-  const ok = await sendMonthlyReport(report);
-  return Response.json({ ok, month: report.label, revenue: report.revenue });
+  const res = await sendMonthlyReport(report);
+  return Response.json({ ok: res.ok, error: res.error, month: report.label, revenue: report.revenue });
 }
