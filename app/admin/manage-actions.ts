@@ -6,6 +6,7 @@ import { CONTENT_FIELDS } from "@/lib/content";
 import { DR_PROVINCES } from "@/lib/shipping";
 import { sendPushToAdmins } from "@/lib/push.server";
 import { notifyRestock } from "@/lib/stock-alerts.server";
+import { sendOrderStatusUpdate } from "@/lib/email";
 
 export type ActionState = { ok: boolean; message: string } | null;
 
@@ -179,6 +180,26 @@ export async function updateOrderStatus(
 ): Promise<void> {
   const supabase = await requireAdmin();
   await supabase.from("orders").update({ status }).eq("id", id);
+
+  // Avisar al cliente por correo del nuevo estado.
+  try {
+    const { data: order } = await supabase
+      .from("orders")
+      .select("customer_email, customer_name, tracking_code")
+      .eq("id", id)
+      .maybeSingle();
+    if (order?.customer_email) {
+      await sendOrderStatusUpdate({
+        to: order.customer_email,
+        trackingCode: order.tracking_code,
+        customerName: order.customer_name,
+        status,
+      });
+    }
+  } catch {
+    /* el aviso no debe bloquear el cambio de estado */
+  }
+
   revalidatePath("/admin");
 }
 

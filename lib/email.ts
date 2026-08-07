@@ -220,6 +220,42 @@ export async function sendMonthlyReport(r: MonthlyReportEmail): Promise<boolean>
   });
 }
 
+const STATUS_COPY: Record<string, { title: string; line: string }> = {
+  nuevo: { title: "Recibimos tu pedido", line: "Tu pedido fue recibido y lo estamos revisando." },
+  confirmado: { title: "Tu pedido fue confirmado", line: "¡Confirmado! Ya comenzamos a coordinar tu pedido." },
+  "en confección": { title: "Tu pedido está en confección", line: "Manos a la obra: tu pieza se está confeccionando." },
+  listo: { title: "Tu pedido está listo", line: "¡Tu pedido está listo! Te contactamos para coordinar la entrega o el retiro." },
+  entregado: { title: "Tu pedido fue entregado", line: "Tu pedido fue entregado. ¡Gracias por elegir Coral Coast!" },
+};
+
+/** Aviso al cliente cuando cambia el estado de su pedido. */
+export async function sendOrderStatusUpdate(o: {
+  to: string;
+  trackingCode?: string | null;
+  customerName?: string | null;
+  status: string;
+}): Promise<boolean> {
+  const copy = STATUS_COPY[o.status] ?? {
+    title: "Actualización de tu pedido",
+    line: `El estado de tu pedido ahora es: ${o.status}.`,
+  };
+  const body = `
+    <p style="line-height:1.6">Hola${o.customerName ? " " + o.customerName : ""}, ${copy.line}</p>
+    ${o.trackingCode ? `
+    <div style="background:#F0F4F6;border-radius:6px;padding:16px;margin:20px 0;text-align:center">
+      <div style="font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#7C8F7A">Número de pedido</div>
+      <div style="font-family:Georgia,serif;font-size:24px;color:#D97A5E;letter-spacing:2px;margin-top:4px">${o.trackingCode}</div>
+      <div style="margin-top:6px;font-size:14px;color:#0D2B3E">Estado: <strong>${o.status}</strong></div>
+      <a href="https://www.coralcoastrd.com/rastrear?codigo=${o.trackingCode}" style="display:inline-block;margin-top:10px;font-size:13px;color:#0D2B3E">Ver estado del pedido →</a>
+    </div>` : `<p style="line-height:1.5">Estado actual: <strong>${o.status}</strong>.</p>`}`;
+
+  return sendEmail({
+    to: o.to,
+    subject: `${copy.title}${o.trackingCode ? ` · ${o.trackingCode}` : ""} · Coral Coast`,
+    html: shell(copy.title, body),
+  });
+}
+
 /** Bienvenida a suscriptores de novedades. */
 export async function sendWelcome(to: string): Promise<boolean> {
   const body = `
