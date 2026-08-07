@@ -94,6 +94,7 @@ export function Navbar({ userEmail }: { userEmail: string | null }) {
             {acct && userEmail && (
               <div className="absolute right-0 mt-3 w-52 bg-fondo border border-navy/10 shadow-lg py-2 text-sm text-navy">
                 <p className="px-4 py-2 text-xs text-navy/50 truncate">{userEmail}</p>
+                <Link href="/mis-direcciones" className="block px-4 py-2 hover:bg-navy/5">Mis direcciones</Link>
                 <Link href="/favoritos" className="block px-4 py-2 hover:bg-navy/5">Favoritos</Link>
                 <form action={logoutCustomer}>
                   <button className="w-full text-left px-4 py-2 hover:bg-navy/5">Cerrar sesión</button>
@@ -149,7 +150,11 @@ export function Navbar({ userEmail }: { userEmail: string | null }) {
               animate="show"
               variants={{ show: { transition: { staggerChildren: 0.05, delayChildren: 0.08 } } }}
             >
-              {[...NAV, { href: "/favoritos", label: "Favoritos" }].map((item) => (
+              {[
+                ...NAV,
+                { href: "/favoritos", label: "Favoritos" },
+                ...(userEmail ? [{ href: "/mis-direcciones", label: "Mis direcciones" }] : []),
+              ].map((item) => (
                 <motion.li
                   key={item.href}
                   variants={{ hidden: { opacity: 0, x: -12 }, show: { opacity: 1, x: 0 } }}
