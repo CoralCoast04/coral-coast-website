@@ -464,3 +464,46 @@ create index if not exists sales_sold_at_idx on public.sales (sold_at);
 -- =============================================================================
 alter table public.products add column if not exists made_to_measure_price numeric;
 alter table public.sales add column if not exists bordado text;
+
+-- =============================================================================
+-- v12 · Direcciones guardadas por usuario ("Mis direcciones")
+-- =============================================================================
+create table if not exists public.addresses (
+  id           uuid primary key default gen_random_uuid(),
+  user_id      uuid not null references auth.users(id) on delete cascade,
+  label        text,
+  recipient    text,
+  phone        text,
+  province     text,
+  municipality text,
+  address      text not null,
+  is_default   boolean not null default false,
+  created_at   timestamptz not null default now()
+);
+alter table public.addresses enable row level security;
+drop policy if exists "addresses_own_all" on public.addresses;
+create policy "addresses_own_all" on public.addresses for all
+  to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+create index if not exists addresses_user_idx on public.addresses (user_id);
+
+-- =============================================================================
+-- v12 · Direcciones guardadas por cliente ("Mis direcciones")
+-- =============================================================================
+create table if not exists public.addresses (
+  id         uuid primary key default gen_random_uuid(),
+  user_id    uuid not null references auth.users(id) on delete cascade,
+  label      text,
+  full_name  text,
+  phone      text,
+  province   text,
+  city       text,
+  line1      text not null,
+  reference  text,
+  is_default boolean not null default false,
+  created_at timestamptz not null default now()
+);
+alter table public.addresses enable row level security;
+drop policy if exists "addresses_own_all" on public.addresses;
+create policy "addresses_own_all" on public.addresses for all
+  to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+create index if not exists addresses_user_idx on public.addresses (user_id);

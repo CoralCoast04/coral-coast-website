@@ -58,8 +58,10 @@ export function Hero({
           <source src="/hero.mp4" type="video/mp4" />
         </video>
 
-        {/* Velo para legibilidad (más oscuro arriba para la navbar) */}
-        <div className="absolute inset-0 bg-gradient-to-b from-navy/65 via-navy/35 to-navy/75" />
+        {/* Velo sutil: leve oscurecido arriba/abajo (navbar) + a la izquierda (texto),
+            dejando la foto visible al centro y a la derecha. */}
+        <div className="absolute inset-0 bg-gradient-to-b from-navy/45 via-transparent to-navy/45" />
+        <div className="absolute inset-0 bg-gradient-to-r from-navy/55 via-navy/15 to-transparent" />
       </motion.div>
 
       {/* Contenido */}
@@ -68,7 +70,7 @@ export function Hero({
         className="container-luxe relative z-10 flex h-full flex-col items-start justify-center text-white"
       >
         <motion.p
-          className="eyebrow text-arena mb-5"
+          className="eyebrow text-arena mb-4 text-[0.62rem]"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, ease, delay: 0.2 }}
@@ -77,7 +79,7 @@ export function Hero({
         </motion.p>
 
         <motion.h1
-          className="max-w-3xl text-4xl leading-[1.1] sm:text-6xl md:text-7xl font-light"
+          className="max-w-md text-3xl leading-[1.15] sm:text-4xl md:text-5xl font-light"
           initial={{ opacity: 0, y: 28 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1.1, ease, delay: 0.35 }}
@@ -86,7 +88,7 @@ export function Hero({
         </motion.h1>
 
         <motion.p
-          className="mt-6 max-w-xl text-base sm:text-lg text-white/85 font-light leading-relaxed"
+          className="mt-4 max-w-sm text-sm sm:text-base text-white/80 font-light leading-relaxed"
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1.1, ease, delay: 0.5 }}
@@ -95,7 +97,7 @@ export function Hero({
         </motion.p>
 
         <motion.div
-          className="mt-10 flex flex-col sm:flex-row gap-4"
+          className="mt-8 flex flex-col sm:flex-row gap-4"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1.1, ease, delay: 0.65 }}

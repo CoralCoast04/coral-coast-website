@@ -12,6 +12,7 @@ import { createClient, isSupabaseConfigured } from "@/lib/supabase/server";
 import { getWishlistIds } from "@/app/wishlist-actions";
 import { getContent } from "@/lib/content";
 import { getShippingRates } from "@/lib/shipping.server";
+import { getUserAddresses } from "@/lib/addresses.server";
 
 const cormorant = Cormorant_Garamond({
   variable: "--font-cormorant",
@@ -87,6 +88,7 @@ export default async function RootLayout({
     getShippingRates(),
   ]);
   const freeShippingThreshold = Number(content.free_shipping_threshold) || 0;
+  const addresses = userEmail ? await getUserAddresses() : [];
 
   return (
     <html
@@ -110,6 +112,7 @@ export default async function RootLayout({
               freeShippingThreshold={freeShippingThreshold}
               userName={userName}
               userEmail={userEmail}
+              addresses={addresses}
             />
           </WishlistProvider>
         </CartProvider>

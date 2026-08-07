@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { Menu, X, ShoppingBag, Heart, User } from "lucide-react";
 import { waLink, WA_MESSAGES } from "@/lib/whatsapp";
 import { useCart } from "@/lib/cart/CartContext";
@@ -93,6 +94,7 @@ export function Navbar({ userEmail }: { userEmail: string | null }) {
             {acct && userEmail && (
               <div className="absolute right-0 mt-3 w-52 bg-fondo border border-navy/10 shadow-lg py-2 text-sm text-navy">
                 <p className="px-4 py-2 text-xs text-navy/50 truncate">{userEmail}</p>
+                <Link href="/mis-direcciones" className="block px-4 py-2 hover:bg-navy/5">Mis direcciones</Link>
                 <Link href="/favoritos" className="block px-4 py-2 hover:bg-navy/5">Favoritos</Link>
                 <form action={logoutCustomer}>
                   <button className="w-full text-left px-4 py-2 hover:bg-navy/5">Cerrar sesión</button>
@@ -115,37 +117,67 @@ export function Navbar({ userEmail }: { userEmail: string | null }) {
             WhatsApp
           </a>
 
-          <button aria-label="Menú" onClick={() => setOpen((v) => !v)} className={`lg:hidden ${iconColor}`}>
-            {open ? <X size={24} /> : <Menu size={24} />}
+          <button aria-label="Menú" onClick={() => setOpen((v) => !v)} className={`lg:hidden ${iconColor} transition-transform duration-300 active:scale-90`}>
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.span
+                key={open ? "x" : "menu"}
+                initial={{ rotate: -90, opacity: 0 }}
+                animate={{ rotate: 0, opacity: 1 }}
+                exit={{ rotate: 90, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="block"
+              >
+                {open ? <X size={24} /> : <Menu size={24} />}
+              </motion.span>
+            </AnimatePresence>
           </button>
         </div>
       </nav>
 
       {/* Mobile menu */}
-      {open && (
-        <div className="lg:hidden bg-fondo border-t border-navy/10">
-          <ul className="container-luxe flex flex-col py-4 text-navy">
-            {NAV.map((item) => (
-              <li key={item.href}>
-                <Link href={item.href} className="block py-3 text-sm tracking-wide">{item.label}</Link>
-              </li>
-            ))}
-            <li><Link href="/favoritos" className="block py-3 text-sm tracking-wide">Favoritos</Link></li>
-            {userEmail ? (
-              <li>
-                <form action={logoutCustomer}>
-                  <button className="block py-3 text-sm tracking-wide text-navy/70">Cerrar sesión</button>
-                </form>
-              </li>
-            ) : (
-              <li><Link href="/login" className="block py-3 text-sm tracking-wide">Ingresar / Registrarse</Link></li>
-            )}
-            <li className="pt-3">
-              <a href={waLink(WA_MESSAGES.general)} target="_blank" rel="noopener noreferrer" className="btn w-full">WhatsApp</a>
-            </li>
-          </ul>
-        </div>
-      )}
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            className="lg:hidden overflow-hidden bg-fondo/95 backdrop-blur-md border-t border-navy/10"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <motion.ul
+              className="container-luxe flex flex-col py-4 text-navy"
+              initial="hidden"
+              animate="show"
+              variants={{ show: { transition: { staggerChildren: 0.05, delayChildren: 0.08 } } }}
+            >
+              {[
+                ...NAV,
+                { href: "/favoritos", label: "Favoritos" },
+                ...(userEmail ? [{ href: "/mis-direcciones", label: "Mis direcciones" }] : []),
+              ].map((item) => (
+                <motion.li
+                  key={item.href}
+                  variants={{ hidden: { opacity: 0, x: -12 }, show: { opacity: 1, x: 0 } }}
+                >
+                  <Link href={item.href} className="block py-3 text-sm tracking-wide">{item.label}</Link>
+                </motion.li>
+              ))}
+              <motion.li variants={{ hidden: { opacity: 0, x: -12 }, show: { opacity: 1, x: 0 } }}>
+                {userEmail ? (
+                  <form action={logoutCustomer}>
+                    <button className="block py-3 text-sm tracking-wide text-navy/70">Cerrar sesión</button>
+                  </form>
+                ) : (
+                  <Link href="/login" className="block py-3 text-sm tracking-wide">Ingresar / Registrarse</Link>
+                )}
+              </motion.li>
+              <motion.li className="pt-3" variants={{ hidden: { opacity: 0, x: -12 }, show: { opacity: 1, x: 0 } }}>
+                <a href={waLink(WA_MESSAGES.general)} target="_blank" rel="noopener noreferrer" className="btn w-full">WhatsApp</a>
+              </motion.li>
+            </motion.ul>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </header>
   );
 }

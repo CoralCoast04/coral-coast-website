@@ -32,6 +32,7 @@ export type AppliedCoupon = {
 
 type CartContextType = {
   items: CartItem[];
+  savedItems: CartItem[];
   coupon: AppliedCoupon | null;
   isOpen: boolean;
   openCart: () => void;
@@ -40,6 +41,9 @@ type CartContextType = {
   removeItem: (key: string) => void;
   setQty: (key: string, qty: number) => void;
   toggleGift: (key: string) => void;
+  saveForLater: (key: string) => void;
+  moveToCart: (key: string) => void;
+  removeSaved: (key: string) => void;
   clear: () => void;
   applyCoupon: (c: AppliedCoupon) => void;
   removeCoupon: () => void;
@@ -55,6 +59,7 @@ const STORAGE_KEY = "coral-cart-v1";
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
+  const [savedItems, setSavedItems] = useState<CartItem[]>([]);
   const [coupon, setCoupon] = useState<AppliedCoupon | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [hydrated, setHydrated] = useState(false);
@@ -66,6 +71,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       if (raw) {
         const parsed = JSON.parse(raw);
         setItems(parsed.items ?? []);
+        setSavedItems(parsed.savedItems ?? []);
         setCoupon(parsed.coupon ?? null);
       }
     } catch {
@@ -77,8 +83,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
   // Persistir
   useEffect(() => {
     if (!hydrated) return;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ items, coupon }));
-  }, [items, coupon, hydrated]);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ items, savedItems, coupon }));
+  }, [items, savedItems, coupon, hydrated]);
 
   function addItem(product: Product, size: string, qty = 1) {
     const key = `${product.id}::${size}`;
@@ -130,6 +136,34 @@ export function CartProvider({ children }: { children: ReactNode }) {
     );
   }
 
+  function saveForLater(key: string) {
+    setItems((prev) => {
+      const it = prev.find((i) => i.key === key);
+      if (it) setSavedItems((s) => (s.some((x) => x.key === key) ? s : [...s, it]));
+      return prev.filter((i) => i.key !== key);
+    });
+  }
+
+  function moveToCart(key: string) {
+    setSavedItems((prev) => {
+      const it = prev.find((i) => i.key === key);
+      if (it) {
+        setItems((c) => {
+          const existing = c.find((x) => x.key === key);
+          return existing
+            ? c.map((x) => (x.key === key ? { ...x, qty: x.qty + it.qty } : x))
+            : [...c, it];
+        });
+        setIsOpen(true);
+      }
+      return prev.filter((i) => i.key !== key);
+    });
+  }
+
+  function removeSaved(key: string) {
+    setSavedItems((prev) => prev.filter((i) => i.key !== key));
+  }
+
   function clear() {
     setItems([]);
     setCoupon(null);
@@ -153,6 +187,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const value: CartContextType = {
     items,
+    savedItems,
     coupon,
     isOpen,
     openCart: () => setIsOpen(true),
@@ -161,6 +196,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
     removeItem,
     setQty,
     toggleGift,
+    saveForLater,
+    moveToCart,
+    removeSaved,
     clear,
     applyCoupon: setCoupon,
     removeCoupon: () => setCoupon(null),
