@@ -67,7 +67,7 @@ Esto habilita el login del panel y que edites todo sin tocar código.
 1. En la carpeta del proyecto, abre el archivo **`.env.local`**.
 2. Complétalo así (pega tus valores reales):
    ```env
-   NEXT_PUBLIC_WHATSAPP=18498479200
+   NEXT_PUBLIC_WHATSAPP=18098583363
 
    NEXT_PUBLIC_SUPABASE_URL=https://abcd1234.supabase.co
    NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOi...tu-clave-completa...

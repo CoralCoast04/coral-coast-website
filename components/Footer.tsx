@@ -39,7 +39,7 @@ export async function Footer() {
           <ul className="space-y-3 text-sm">
             <li>
               <a href={waLink(WA_MESSAGES.general)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 hover:text-white">
-                <MessageCircle size={16} /> +1 849 847 9200
+                <MessageCircle size={16} /> +1 809 858 3363
               </a>
             </li>
             <li>

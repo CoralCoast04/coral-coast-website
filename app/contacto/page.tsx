@@ -34,7 +34,7 @@ export default async function ContactoPage() {
           <Reveal delay={0.1} className="mt-10 space-y-5">
             <a href={waLink(WA_MESSAGES.general)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-navy/80 hover:text-terracota transition-colors">
               <MessageCircle size={20} className="text-terracota" strokeWidth={1.5} />
-              <span>+1 849 847 9200</span>
+              <span>+1 809 858 3363</span>
             </a>
             <a href="mailto:hola@coralcoastrd.com" className="flex items-center gap-3 text-navy/80 hover:text-terracota transition-colors">
               <Mail size={20} className="text-terracota" strokeWidth={1.5} />
