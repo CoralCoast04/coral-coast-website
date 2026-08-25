@@ -1,6 +1,6 @@
-// Número en formato internacional sin signos ni espacios (República Dominicana +1 849)
+// Número en formato internacional sin signos ni espacios (República Dominicana +1 809)
 export const WHATSAPP_NUMBER =
-  process.env.NEXT_PUBLIC_WHATSAPP?.replace(/\D/g, "") || "18498479200";
+  process.env.NEXT_PUBLIC_WHATSAPP?.replace(/\D/g, "") || "18098583363";
 
 /**
  * Construye un enlace wa.me con mensaje pre-cargado.

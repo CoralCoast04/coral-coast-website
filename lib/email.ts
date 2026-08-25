@@ -7,13 +7,16 @@ const RESEND_FROM =
 
 export const isEmailConfigured = Boolean(RESEND_API_KEY);
 
-/** Envía un correo vía Resend. No-op si no hay API key configurada. */
-async function sendEmail(opts: {
+export type EmailResult = { ok: boolean; error?: string };
+
+/** Envía un correo vía Resend, devolviendo el detalle del error si falla. */
+async function sendEmailRaw(opts: {
   to: string;
   subject: string;
   html: string;
-}): Promise<boolean> {
-  if (!RESEND_API_KEY) return false;
+}): Promise<EmailResult> {
+  if (!RESEND_API_KEY)
+    return { ok: false, error: "Falta la variable RESEND_API_KEY en Vercel." };
   try {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -28,10 +31,27 @@ async function sendEmail(opts: {
         html: opts.html,
       }),
     });
-    return res.ok;
-  } catch {
-    return false;
+    if (res.ok) return { ok: true };
+    let detail = `Resend respondió ${res.status}`;
+    try {
+      const j = await res.json();
+      detail = j?.message || j?.error || j?.name || detail;
+    } catch {
+      /* sin cuerpo */
+    }
+    return { ok: false, error: detail };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "fallo de red" };
   }
+}
+
+/** Envía un correo vía Resend. No-op si no hay API key configurada. */
+async function sendEmail(opts: {
+  to: string;
+  subject: string;
+  html: string;
+}): Promise<boolean> {
+  return (await sendEmailRaw(opts)).ok;
 }
 
 const rd = (n: number) => (n <= 0 ? "A consultar" : "RD$ " + n.toLocaleString("es-DO"));
@@ -176,7 +196,7 @@ export type MonthlyReportEmail = {
 };
 
 /** Reporte mensual de ventas al estudio. */
-export async function sendMonthlyReport(r: MonthlyReportEmail): Promise<boolean> {
+export async function sendMonthlyReport(r: MonthlyReportEmail): Promise<EmailResult> {
   const top = r.topItems.length
     ? r.topItems
         .map(
@@ -213,7 +233,7 @@ export async function sendMonthlyReport(r: MonthlyReportEmail): Promise<boolean>
       ${top}
     </table>`;
 
-  return sendEmail({
+  return sendEmailRaw({
     to: STUDIO_EMAIL,
     subject: `Reporte de ventas · ${r.label} · Coral Coast`,
     html: shell("Reporte mensual de ventas", body),

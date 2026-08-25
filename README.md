@@ -49,7 +49,7 @@ No hay pago en línea: el cliente arma su selección, aplica un cupón (validado
 ## WhatsApp
 
 El número de cierre se controla con `NEXT_PUBLIC_WHATSAPP` (solo dígitos, formato internacional).
-Actual: `+1 849 847 9200`.
+Actual: `+1 809 858 3363`.
 
 ## Video del hero
 
